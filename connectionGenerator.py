@@ -77,7 +77,7 @@ tried, failed, made = 0,0,0
 
 for i, trainname in enumerate(train):
     if trainname is not None and train[i+1] is not None and train[i+1]!=trainname and location[i+1] in ['Edinburgh',] and location[i]!='Location':
-        u170.range(f'A{i+1}:J{i+1}').color = (189, 211, 217)
+        #u170.range(f'A{i+1}:J{i+1}').color = (189, 211, 217)
         arrTime = th(arr[i+1])
         depTime = th(dep[i+1])
         
@@ -86,9 +86,13 @@ for i, trainname in enumerate(train):
             entryArr    = rp.findUniqueEntry(tree,train[i][0:4],'EDINBUR',arrTime,-1)
             entryWait   = rp.findUniqueEntry(tree,train[i+1][0:4],'EDINBUR',depTime,0)
             
+                        
             conn = rp.makecon(entryArr)
             
-            entryWait.append(conn)
+            if not rp.connectionExists(entryWait, conn):
+                entryWait.append(conn)
+            
+
             
             made = made+1
             #print(f'made conn between {train[i]} and {train[i+1]} at EDINBUR at {arrTime}')

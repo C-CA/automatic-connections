@@ -71,6 +71,10 @@ def findUniqueEntry(tree,trainName,stationID,time,index,secondsTolerance = 600):
         raise ValueError(f'{trainName} @ {stationID} @ {time} @ index {index} is {errormsg}')
         
 
+def connectionExists(entryWait, conn):
+    return any([entry.attrib == conn.attrib for entry in entryWait.getchildren()])
+
+
 def makecon(entryArr,
             transitionTime='300',
             validityTime='86399',
