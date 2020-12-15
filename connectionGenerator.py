@@ -152,7 +152,7 @@ for i, trainname in enumerate(train):
                 result.duplicate.app(row)
             
         except ValueError as e:
-            result.failed.app(row,str(e))
+            result.failed.app(row,f'{e} at row {i+1}')
             
             print (f'{e} at row {i+1}')
              
