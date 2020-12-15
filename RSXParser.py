@@ -174,9 +174,12 @@ if __name__ == '__main__':
                                operation = row[7])
             
             entryWait = findUniqueEntry(tree,row[3],row[0],row[4],0)
-            entryWait.append(progconn)
-            
-            progconns.append(progconn)
+            if not connectionExists(entryWait,progconn):
+                entryWait.append(progconn)
+                progconns.append(progconn)
+            else:
+                print(f'warning: {row} is duplicate')
+                
         except ValueError:
             faulty.append(row)
             
