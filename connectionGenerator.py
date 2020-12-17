@@ -13,83 +13,12 @@ This module should not implement any XML logic - any XML operations should
 instead go in RSXParser's function definitions and only be called here.
 
 """
-
-from abc import ABC, abstractmethod
-
 import xlwings as xw
 import RSXParser as rp
+from NRFunctions import log, hashfile, ResultType, timeHandler as th
+
 #use datetime library instead
-from time import strftime, gmtime ,time
-from math import ceil
-
-
-class Counter:
-    def __get__(self,instance,owner):
-        return len(instance._contents)
-
-class Getter:
-    def __get__(self,instance,owner):
-        return instance._contents
-
-class ExitType:
-    count = Counter()
-    get = Getter()
-    
-    def __init__(self):
-        self._contents = []
-
-    def app(self,value):
-        self._contents.append(value)
-        
-    def __set__(self):
-        raise AttributeError('__set__ triggered')
-
-class FailedType(ExitType):
-    def __init__(self):
-        super().__init__()
-        self.errors = []
-        
-    def app(self,value,errormsg):
-        self._contents.append(value)
-        self.errors.append(errormsg)
-
-class ResultType:    
-    def __init__(self):
-        self.tried      = ExitType()
-        self.made       = ExitType()
-        self.duplicate  = ExitType()
-        self.failed     = FailedType()
-        
-        
-
-def removeNone(cells):
-    output = []
-    for i in cells:
-        if i is not None:
-            output.append(i)
-    return output
-
-#refactor to use strptime()?
-def timeHandler(input):
-    if type(input) is str:
-        if '&' in input:
-            if '½' in input:
-                return (input.split('&')[-1]).replace('½',':30')
-            else:
-                return input.split('&')[-1] + ':00'
-            
-        elif '½' in input:
-            return input.replace('½',':30')    
-        else:
-            raise ValueError('don\'t know how to handle time string {input}')
-        
-    elif type(input) is float:
-        return strftime('%H:%M:%S',gmtime(ceil(86400*input)))
-    else:
-        raise TypeError(f'cannot handle time {input} because of type {type(input)}')
-
-#shorthand
-th=timeHandler
+from time import time
 
 
 #%%
@@ -159,8 +88,9 @@ for i, trainname in enumerate(train):
 #%%
 print(f'Made {result.made.count} connections out of {result.tried.count} in diagram. Rejected {result.duplicate.count} duplicates and failed {result.failed.count}.')
 print(f"--- {time()-start_time} seconds ---")
-rp.write(tree,'longlands_progadd.rsx')
 
+rp.write(tree,'longlands_progadd.rsx')
+print(hashfile('longlands_progadd.rsx'))
 
 resultsheet = wb.sheets['Results']
 resultsheet.clear()

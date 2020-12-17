@@ -118,7 +118,7 @@ Demo code. Will not be run if imported as a module.
 """
 
 if __name__ == '__main__':
-    modelname = 'longlands'
+    modelname = 'mml'
     inputfilename   = modelname + '.rsx'
     outputfilename  = modelname + '_progadd.rsx'
     
