@@ -21,15 +21,18 @@ from NRFunctions import log, hashfile, ResultType, timeHandler as th
 from time import time
 
 
-#%%
+#%% read files
 start_time = time() #script timer - debug only
 
-wb = xw.Book('Input.xlsx')
-u170 = wb.sheets['u170']
+modelname = 'longlands' #east-connecticut-bluebird-maryland-oxygen-ohio for 6-word humanized md5
+inputfile = modelname + '.rsx'
 
-tree = rp.read('longlands.rsx')
+tree = rp.read(inputfile)
+print(f'Reading {inputfile} (hash {hashfile(inputfile)})')
+
+#%% remove connections that match className
+
 className = '170'
-
 removed = 0
 for conn in tree.findall('.//entry[@stationID="EDINBUR"]/connection'):
     if className in conn.getparent().attrib['trainTypeId']:
@@ -38,6 +41,15 @@ for conn in tree.findall('.//entry[@stationID="EDINBUR"]/connection'):
 
 print(f'Removed {removed} class {className} EDINBUR connections.\n')
 
+#%% read Excel ud and add connections
+
+wb = xw.Book('Input.xlsx')
+u170 = wb.sheets['u170']
+
+result = ResultType()
+stationID = 'EDINBUR'
+
+# "structured UD"
 location = u170.range('A1:A3000').value
 arr = u170.range('B1:B3000').value
 dep = u170.range('C1:C3000').value
@@ -51,9 +63,6 @@ train.insert(0,None)
 
 u170.range('A1:J3000').color = None
 
-result = ResultType()
-
-stationID = 'EDINBUR'
 
 for i, trainname in enumerate(train):
     if trainname is not None and train[i+1] is not None and train[i+1]!=trainname and location[i+1] in ['Edinburgh',] and location[i]!='Location':
@@ -85,12 +94,17 @@ for i, trainname in enumerate(train):
             
             print (f'{e} at row {i+1}')
              
-#%%
-print(f'Made {result.made.count} connections out of {result.tried.count} in diagram. Rejected {result.duplicate.count} duplicates and failed {result.failed.count}.')
-print(f"--- {time()-start_time} seconds ---")
+#%% write output rsx and result sheet
 
-rp.write(tree,'longlands_progadd.rsx')
-print(hashfile('longlands_progadd.rsx'))
+print(f'Made {result.made.count} connections out of {result.tried.count} in diagram. Rejected {result.duplicate.count} duplicates and failed {result.failed.count}.')
+
+
+outputfile = modelname + '_progadd.rsx'
+
+rp.write(tree,outputfile)
+print(f'\nWrote {outputfile} (hash {hashfile(outputfile)})')
+
+print(f"--- {time()-start_time} seconds ---")
 
 resultsheet = wb.sheets['Results']
 resultsheet.clear()
