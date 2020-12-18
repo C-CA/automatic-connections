@@ -76,7 +76,7 @@ def hashfile(file):
         file_hash = hashlib.md5()
         while chunk := f.read(8192):
             file_hash.update(chunk)
-    return humanhash.humanize(file_hash.hexdigest(), words = 4)
+    return humanhash.humanize(file_hash.hexdigest(), words = 6)
 
 
 def removeNone(cells):
