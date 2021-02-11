@@ -19,7 +19,7 @@ Imports and function definitions.
 """
 
 from lxml import etree as et
-from datetime import datetime,timedelta
+from datetime import datetime
 
 
 #better length function that returns the length of any iterator, not just ones with a __len__().  
@@ -104,8 +104,7 @@ def makecon(entryArr,
 
 def read(filename): #reads an XML and returns an ElementTree object
     parser = et.XMLParser(remove_blank_text=True)
-    return et.parse(f'C:\\Users\\Tfarhy\\OneDrive - Network Rail\\2020.11.24_XML backend for adding connections\\{filename}', parser)
-    
+    return et.parse(filename, parser)
     
 def write(tree,filename):
     et.indent(tree,space='\t')
