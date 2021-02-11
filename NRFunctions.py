@@ -13,7 +13,7 @@ External dependencies.
 import hashlib
 import humanhash
 from math import ceil
-from time import strftime, gmtime 
+from time import strftime, strptime, gmtime 
 
 
 #%%
@@ -56,7 +56,7 @@ class ResultType:
         self.tried      = ExitType()
         self.made       = ExitType()
         self.duplicate  = ExitType()
-        self.failed     = FailedType()
+        self.failed     = ExitType()
 
 #%%
 """
@@ -99,7 +99,10 @@ def timeHandler(input):
         elif '½' in input:
             return input.replace('½',':30')    
         else:
-            raise ValueError('don\'t know how to handle time string {input}')
+            try:
+                return strftime('%H:%M:%S',strptime(input,'%H:%M:%S'))
+            except ValueError:
+                raise ValueError('don\'t know how to handle time string {input}')
         
     elif type(input) is float:
         return strftime('%H:%M:%S',gmtime(ceil(86400*input)))
