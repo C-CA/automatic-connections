@@ -13,117 +13,135 @@ This module should not implement any XML logic - any XML operations should
 instead go in RSXParser's function definitions and only be called here.
 
 """
-import xlwings as xw
+
+from NRFunctions import hashfile, ResultType, timeHandler as th
+#from transitiontime import calculateTurnaround
 import RSXParser as rp
-from NRFunctions import log, hashfile, ResultType, timeHandler as th
 
 #use datetime library instead
 from time import time
 
+def GenerateConnections(tree, StandardDiagram, stationID, stationName):
+    result = ResultType()
+
+    location = StandardDiagram.ud['Location']
+    arr = StandardDiagram.ud['Arr']
+    dep = StandardDiagram.ud['Dep']
+    train = StandardDiagram.ud['Train']
+    
+    for i, trainname in enumerate(train):
+        if trainname != 'UDNONE' and train[i+1]  != 'UDNONE' and train[i+1]!=trainname and location[i+1] in [f'{stationName}',] and location[i]!='Location':
+            #u170.range(f'A{i+1}:J{i+1}').color = (189, 211, 217)
+            
+            arrTime = th(arr[i+1])
+            depTime = th(dep[i+1])
+            
+            row = (stationID,train[i],arrTime,train[i+1],depTime)
+            
+            result.tried.app({'row'         :row,
+                              'entryArr'    :None,
+                              'entryWait'   :None,
+                              'conn'        :None})
+            
+            try:
+                entryArr    = rp.findUniqueEntry(tree,train[i][0:4],stationID,arrTime,-1) #binding reference to tree
+                entryWait   = rp.findUniqueEntry(tree,train[i+1][0:4],stationID,depTime,0)
+                
+                conn = rp.makecon(entryArr)
+                
+                if not rp.connectionExists(entryWait, conn):
+
+                    result.made.app({'row'          :row,
+                                      'entryArr'    :entryArr,
+                                      'entryWait'   :entryWait,
+                                      'conn'        :conn})
+                else:
+                    result.duplicate.app({'row'     :row,
+                                      'entryArr'    :entryArr,
+                                      'entryWait'   :entryWait,
+                                      'conn'        :conn})
+            except ValueError as e:
+                result.failed.app({'row'       :row,
+                                   'error'     :f'{e} at row {i+1}'})            
+                print (f'{e} at row {i+1}')     
+                
+    return result
+
+
+def AddConnections(result):
+    for item in result.made.get:
+        
+        entryWait = item['entryWait']
+        conn = item['conn']
+        
+        if not rp.connectionExists(entryWait, conn):
+            entryWait.append(conn)
+        
+    #DEBUFGLAG
+    #entryWait.append(rp.et.Element('plus'))
 
 #%% read files
-start_time = time() #script timer - debug only
-
-modelname = 'longlands' #east-connecticut-bluebird-maryland-oxygen-ohio for 6-word humanized md5
-inputfile = modelname + '.rsx'
-
-tree = rp.read(inputfile)
-print(f'Reading {inputfile} (hash {hashfile(inputfile)})')
-
-#%% remove connections that match className
-
-className = '170'
-removed = 0
-for conn in tree.findall('.//entry[@stationID="EDINBUR"]/connection'):
-    if className in conn.getparent().attrib['trainTypeId']:
-        conn.getparent().remove(conn)
-        removed = removed+1
-
-print(f'Removed {removed} class {className} EDINBUR connections.\n')
-
-#%% read Excel ud and add connections
-
-wb = xw.Book('Input.xlsx')
-u170 = wb.sheets['u170']
-
-result = ResultType()
-stationID = 'EDINBUR'
-
-# "structured UD"
-location = u170.range('A1:A3000').value
-arr = u170.range('B1:B3000').value
-dep = u170.range('C1:C3000').value
-train  = u170.range('E1:E3000').value
-
-location.insert(0,None)
-arr.insert(0,None)
-dep.insert(0,None)
-train.insert(0,None)
-
-
-u170.range('A1:J3000').color = None
-
-
-for i, trainname in enumerate(train):
-    if trainname is not None and train[i+1] is not None and train[i+1]!=trainname and location[i+1] in ['Edinburgh',] and location[i]!='Location':
-        u170.range(f'A{i+1}:J{i+1}').color = (189, 211, 217)
-        
-        arrTime = th(arr[i+1])
-        depTime = th(dep[i+1])
-        
-        row = (stationID,train[i],arrTime,train[i+1],depTime)
-        
-        result.tried.app(row)
-        
-        try:
-            entryArr    = rp.findUniqueEntry(tree,train[i][0:4],stationID,arrTime,-1)
-            entryWait   = rp.findUniqueEntry(tree,train[i+1][0:4],stationID,depTime,0)
-            
-                        
-            conn = rp.makecon(entryArr)
-            
-            if not rp.connectionExists(entryWait, conn):
-                entryWait.append(conn)
-                entryWait.append(rp.et.Element('plus'))
-                result.made.app(row)
-            else:
-                result.duplicate.app(row)
-            
-        except ValueError as e:
-            result.failed.app(row,f'{e} at row {i+1}')
-            
-            print (f'{e} at row {i+1}')
-             
-#%% write output rsx and result sheet
-
-print(f'Made {result.made.count} connections out of {result.tried.count} in diagram. Rejected {result.duplicate.count} duplicates and failed {result.failed.count}.')
-
-
-outputfile = modelname + '_progadd.rsx'
-
-rp.write(tree,outputfile)
-print(f'\nWrote {outputfile} (hash {hashfile(outputfile)})')
-
-print(f"--- {time()-start_time} seconds ---")
-
-resultsheet = wb.sheets['Results']
-resultsheet.clear()
-y = 1
-
-for attr , colour in zip(['failed','made','duplicate'],[(235, 143, 143),(190, 209, 151),(204, 204, 204)]):
-    x = getattr(getattr(result,attr),'get')
-    count = getattr(getattr(result,attr),'count')
+if __name__ == '__main__':
+    import RSXParser as rp
+    from UnitDiagramReader import ScotRailReader
     
-    resultsheet.range(f'A{y}').value = x
+    start_time = time() #script timer - debug only
     
-    if attr == 'failed':
-        resultsheet.range(f'F{y}').value = list(zip(getattr(getattr(result,attr),'errors')))
+    modelname = 'longlands' #east-connecticut-bluebird-maryland-oxygen-ohio for 6-word humanized md5
+    inputfile = modelname + '.rsx'
+    
+    tree = rp.read(inputfile)
+    print(f'Reading {inputfile} (hash {hashfile(inputfile)})')
+    
+    #%% remove connections that match className
+    
+    className = '170'
+    removed = 0
+    for conn in tree.findall('.//entry[@stationID="EDINBUR"]/connection'):
+    #for conn in tree.findall('//connection'):
+        if className in conn.getparent().attrib['trainTypeId']:
+            conn.getparent().remove(conn)
+            removed = removed+1
+    
+    print(f'Removed {removed} class {className} EDINBUR connections.\n')
+    
+    #%% standard function calls
+    diagram = ScotRailReader('u170.xlsx')
+    stationID = 'EDINBUR'
+    
+    result = GenerateConnections(tree, diagram, stationID)
+    AddConnections(result)
+          
+    #%% write output rsx and result sheet
+    
+    print(f'Made {result.made.count} connections out of {result.tried.count} in diagram. Rejected {result.duplicate.count} duplicates and failed {result.failed.count}.')
+    
+    
+    outputfile = modelname + '_progadd.rsx' #longlands with u170 = nineteen-butter-ten-fanta-nevada-papa
+    
+    rp.write(tree,outputfile)
+    print(f'\nWrote {outputfile} (hash {hashfile(outputfile)})')
+    
+    print(f"--- {time()-start_time} seconds ---")
+    
+    # wb = xw.Book('Input.xlsx')
+    # resultsheet = wb.sheets['Results']
+    # resultsheet.clear()
+    # y = 1
+    
+    # for attr , colour in zip(['failed','made','duplicate'],[(235, 143, 143),(190, 209, 151),(204, 204, 204)]):
+    #     x = getattr(getattr(result,attr),'get')
+    #     count = getattr(getattr(result,attr),'count')
         
-
-    resultsheet.range(f'A{y}:E{y+count-1}').color = colour
+    #     resultsheet.range(f'A{y}').value = x
+        
+    #     if attr == 'failed':
+    #         resultsheet.range(f'F{y}').value = list(zip(getattr(getattr(result,attr),'errors')))
+            
     
-    y = y+ count
-
-#done
-
+    #     resultsheet.range(f'A{y}:E{y+count-1}').color = colour
+        
+    #     y = y+ count
+    
+    # #done
         
