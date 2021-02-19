@@ -21,16 +21,16 @@ import RSXParser as rp
 #use datetime library instead
 from time import time
 
-def GenerateConnections(tree, StandardDiagram, stationID, stationName):
+def GenerateConnections(tree, DiagramObject, stationID, stationName):
     result = ResultType()
 
-    location = StandardDiagram.ud['Location']
-    arr = StandardDiagram.ud['Arr']
-    dep = StandardDiagram.ud['Dep']
-    train = StandardDiagram.ud['Train']
+    location = DiagramObject.ud['Location']
+    arr = DiagramObject.ud['Arr']
+    dep = DiagramObject.ud['Dep']
+    train = DiagramObject.ud['Train']
     
     for i, trainname in enumerate(train):
-        if trainname != 'UDNONE' and train[i+1]  != 'UDNONE' and train[i+1]!=trainname and location[i+1] in [f'{stationName}',] and location[i]!='Location':
+        if trainname != DiagramObject.EmptyFill and train[i+1]  != DiagramObject.EmptyFill and train[i+1]!=trainname and location[i+1] in [f'{stationName}',] and location[i]!='Location':
             #u170.range(f'A{i+1}:J{i+1}').color = (189, 211, 217)
             
             arrTime = th(arr[i+1])
@@ -44,6 +44,7 @@ def GenerateConnections(tree, StandardDiagram, stationID, stationName):
                               'conn'        :None})
             
             try:
+                #TODO provision for the [0:4] index to be variable
                 entryArr    = rp.findUniqueEntry(tree,train[i][0:4],stationID,arrTime,-1) #binding reference to tree
                 entryWait   = rp.findUniqueEntry(tree,train[i+1][0:4],stationID,depTime,0)
                 
@@ -61,6 +62,7 @@ def GenerateConnections(tree, StandardDiagram, stationID, stationName):
                                       'entryWait'   :entryWait,
                                       'conn'        :conn})
             except ValueError as e:
+                #FIXME the row number is wrong, because of the pandas readexcel offset
                 result.failed.app({'row'       :row,
                                    'error'     :f'{e} at row {i+1}'})            
                 print (f'{e} at row {i+1}')     
