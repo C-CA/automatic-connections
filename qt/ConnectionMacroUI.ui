@@ -43,7 +43,7 @@
     </property>
     <widget class="QWidget" name="tab">
      <attribute name="title">
-      <string>Made (Number)</string>
+      <string>Made</string>
      </attribute>
      <layout class="QGridLayout" name="gridLayout_2">
       <item row="0" column="0">
@@ -215,6 +215,9 @@
        <height>20</height>
       </rect>
      </property>
+     <property name="text">
+      <string>Edinburgh</string>
+     </property>
      <property name="placeholderText">
       <string>e.g. 'Edinburgh'</string>
      </property>
@@ -243,6 +246,9 @@
        <width>101</width>
        <height>20</height>
       </rect>
+     </property>
+     <property name="text">
+      <string>EDINBUR</string>
      </property>
      <property name="placeholderText">
       <string>e.g. 'EDINBUR'</string>
@@ -333,7 +339,11 @@
      <item>
       <layout class="QGridLayout" name="gridLayout">
        <item row="3" column="1">
-        <widget class="QLineEdit" name="lineEdit_2"/>
+        <widget class="QLineEdit" name="lineEdit_2">
+         <property name="text">
+          <string>C:/Users/Tfarhy/OneDrive - Network Rail/2020.11.24_XML backend for adding connections/udec18.xlsx</string>
+         </property>
+        </widget>
        </item>
        <item row="3" column="0">
         <widget class="QLabel" name="label_2">
@@ -364,16 +374,14 @@
         </widget>
        </item>
        <item row="3" column="2">
-        <widget class="QComboBox" name="udselector">
-         <item>
-          <property name="text">
-           <string>ScotRail</string>
-          </property>
-         </item>
-        </widget>
+        <widget class="QComboBox" name="udselector"/>
        </item>
        <item row="0" column="1" colspan="2">
-        <widget class="QLineEdit" name="lineEdit"/>
+        <widget class="QLineEdit" name="lineEdit">
+         <property name="text">
+          <string>C:/Users/Tfarhy/OneDrive - Network Rail/2020.11.24_XML backend for adding connections/longlands.rsx</string>
+         </property>
+        </widget>
        </item>
       </layout>
      </item>
