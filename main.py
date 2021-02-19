@@ -15,7 +15,7 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog, QTableWidget
 from ConnectionMacroUI import Ui_MainWindow
 
 from connectionGenerator import GenerateConnections, AddConnections
-from UnitDiagramReader import ScotRailReader
+import UnitDiagramReader
 from RSXParser import read, write
 from NRFunctions import ResultType, hashfile
 
@@ -27,6 +27,11 @@ class Window(QMainWindow, Ui_MainWindow):
         self.result = ResultType()
         
         self.statusBar.showMessage('Connection Macro pre-alpha v0.1')
+        
+        self.available_ud_readers = [cls.__name__ for cls in UnitDiagramReader.Reader.__subclasses__()]
+        
+        for reader in self.available_ud_readers:
+            self.udselector.addItem(reader)
         
     def connectSignalsSlots(self):
     
@@ -62,14 +67,19 @@ class Window(QMainWindow, Ui_MainWindow):
     #TODO update Number in tab title
     def generate_clicked(self):
         self.tree = read(self.lineEdit.text())
-        self.diagram = ScotRailReader(self.lineEdit_2.text())
+        self.diagram = getattr(UnitDiagramReader,self.udselector.currentText())(self.lineEdit_2.text())
         self.tiploc = self.tiplocbox.text()
         self.stationname = self.stationnamebox.text()
         
-        self.result = GenerateConnections(tree=self.tree, StandardDiagram=self.diagram, stationID=self.tiploc, stationName = self.stationname)
+        self.result = GenerateConnections(tree=self.tree, DiagramObject=self.diagram, stationID=self.tiploc, stationName = self.stationname)
         
         self.console.append(f'Made {self.result.made.count} connections out of {self.result.tried.count} in diagram. Rejected {self.result.duplicate.count} duplicates and failed {self.result.failed.count}.')
-    
+        
+        
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab), f'Made [{self.result.made.count}]')
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_2), f'Duplicate [{self.result.duplicate.count}]')
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_3), f'Falied [{self.result.failed.count}]')
+        
         self.setData(self.tableWidget,self.result.made.get)
         self.setData(self.tableWidget_2,self.result.duplicate.get)
         self.setFailed(self.tableWidget_3,self.result.failed.get)
