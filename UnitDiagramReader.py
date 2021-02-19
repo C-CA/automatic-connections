@@ -16,7 +16,20 @@ class Reader:
     def Parse(self, pathToUD):
         raise NotImplementedError('Parse() not implemented')
 
-
-class ScotRailReader(Reader):
+'''
+ScotRail Reader 1: user needs to drag and drop Word UD into Excel
+'''
+class ScotRailECML(Reader):
     def Parse(self, pathToUD):
         return read_excel(pathToUD, usecols=[0,1,2,4], header=6, dtype = str).fillna(self.EmptyFill)
+
+
+class ScotRailDec19(Reader):
+    def Parse(self, pathToUD):
+        return read_excel(pathToUD, usecols=[0,1,2,4], header=8, dtype = str).fillna(self.EmptyFill)
+    
+    
+if __name__ == '__main__':
+    print(ScotRailDec19('udec19.xlsx').ud)
+    
+    print(ScotRailECML('u170.xlsx').ud)
