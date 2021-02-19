@@ -99,11 +99,12 @@ def timeHandler(input):
         elif '½' in input:
             return input.replace('½',':30')    
         else:
-            try:
-                return strftime('%H:%M:%S',strptime(input,'%H:%M:%S'))
-            except ValueError:
-                raise ValueError('don\'t know how to handle time string {input}')
-        
+            for timeFormat in ['%H:%M:%S','%H:%M']:
+                try:
+                    return strftime('%H:%M:%S',strptime(input,timeFormat))
+                except ValueError:
+                    continue    
+                raise ValueError(f'don\'t know how to handle time string {input}')
     elif type(input) is float:
         return strftime('%H:%M:%S',gmtime(ceil(86400*input)))
     else:
