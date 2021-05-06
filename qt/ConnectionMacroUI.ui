@@ -48,6 +48,12 @@
      <layout class="QGridLayout" name="gridLayout_2">
       <item row="0" column="0">
        <widget class="QTableWidget" name="tableWidget">
+        <attribute name="horizontalHeaderDefaultSectionSize">
+         <number>90</number>
+        </attribute>
+        <attribute name="horizontalHeaderMinimumSectionSize">
+         <number>20</number>
+        </attribute>
         <column>
          <property name="text">
           <string>Transition Time</string>
@@ -83,17 +89,25 @@
           <string>ConWait Time</string>
          </property>
         </column>
+        <column>
+         <property name="text">
+          <string>Add?</string>
+         </property>
+        </column>
        </widget>
       </item>
      </layout>
     </widget>
     <widget class="QWidget" name="tab_2">
      <attribute name="title">
-      <string>Duplicate</string>
+      <string>Duplicates (will not add)</string>
      </attribute>
      <layout class="QGridLayout" name="gridLayout_3">
       <item row="0" column="0">
        <widget class="QTableWidget" name="tableWidget_2">
+        <attribute name="horizontalHeaderDefaultSectionSize">
+         <number>90</number>
+        </attribute>
         <column>
          <property name="text">
           <string>Transition Time</string>
@@ -325,7 +339,7 @@
      <rect>
       <x>10</x>
       <y>10</y>
-      <width>384</width>
+      <width>381</width>
       <height>76</height>
      </rect>
     </property>
@@ -341,7 +355,7 @@
        <item row="3" column="1">
         <widget class="QLineEdit" name="lineEdit_2">
          <property name="text">
-          <string>C:/Users/Tfarhy/OneDrive - Network Rail/2020.11.24_XML backend for adding connections/udec18.xlsx</string>
+          <string>C:/Users/Tfarhy/OneDrive - Network Rail/2020.11.24_XML backend for adding connections/u170.xlsx</string>
          </property>
         </widget>
        </item>
@@ -390,14 +404,14 @@
    <widget class="QPushButton" name="saveButton">
     <property name="geometry">
      <rect>
-      <x>950</x>
+      <x>970</x>
       <y>440</y>
-      <width>241</width>
+      <width>221</width>
       <height>23</height>
      </rect>
     </property>
     <property name="text">
-     <string>Add connections to RSX and save</string>
+     <string>Add connections to RSX and save as...</string>
     </property>
    </widget>
    <widget class="QTextBrowser" name="console">
@@ -475,6 +489,19 @@
     </property>
     <property name="frameShape">
      <enum>QFrame::VLine</enum>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="debugbutton">
+    <property name="geometry">
+     <rect>
+      <x>400</x>
+      <y>440</y>
+      <width>75</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Debug</string>
     </property>
    </widget>
   </widget>
@@ -558,11 +585,28 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>debugbutton</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>debugbutton_clicked()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>437</x>
+     <y>451</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>600</x>
+     <y>245</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>rsxbrowse_clicked()</slot>
   <slot>udbrowse_clicked()</slot>
   <slot>generate_clicked()</slot>
   <slot>savebutton_clicked()</slot>
+  <slot>debugbutton_clicked()</slot>
  </slots>
 </ui>

@@ -23,7 +23,8 @@ from time import time
 
 def GenerateConnections(tree, DiagramObject, stationID, stationName):
     result = ResultType()
-
+    made_so_far = set()
+    
     location = DiagramObject.ud['Location']
     arr = DiagramObject.ud['Arr']
     dep = DiagramObject.ud['Dep']
@@ -49,9 +50,12 @@ def GenerateConnections(tree, DiagramObject, stationID, stationName):
                 entryWait   = rp.findUniqueEntry(tree,train[i+1][0:4],stationID,depTime,0)
                 
                 conn = rp.makecon(entryArr)
+                conn_tuple = (tuple(entryWait.attrib.items()), tuple(conn.attrib.items()))
                 
-                if not rp.connectionExists(entryWait, conn):
-
+                if not rp.connectionExists(entryWait, conn) and not conn_tuple in made_so_far:
+                    
+                    made_so_far.add(conn_tuple)
+                    
                     result.made.app({'row'          :row,
                                       'entryArr'    :entryArr,
                                       'entryWait'   :entryWait,
@@ -85,7 +89,7 @@ def AddConnections(result):
 #%% read files
 if __name__ == '__main__':
     import RSXParser as rp
-    from UnitDiagramReader import ScotRailReader
+    from UnitDiagramReader import ScotRailECML
     
     start_time = time() #script timer - debug only
     
@@ -108,10 +112,11 @@ if __name__ == '__main__':
     print(f'Removed {removed} class {className} EDINBUR connections.\n')
     
     #%% standard function calls
-    diagram = ScotRailReader('u170.xlsx')
+    diagram = ScotRailECML('u170.xlsx')
     stationID = 'EDINBUR'
+    stationName = 'Edinburgh'
     
-    result = GenerateConnections(tree, diagram, stationID)
+    result = GenerateConnections(tree, diagram, stationID, stationName)
     AddConnections(result)
           
     #%% write output rsx and result sheet

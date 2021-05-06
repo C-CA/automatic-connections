@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'qt/ConnectionMacroUI.ui'
+# Form implementation generated from reading ui file '.\qt\ConnectionMacroUI.ui'
 #
 # Created by: PyQt5 UI code generator 5.9.2
 #
@@ -26,7 +26,7 @@ class Ui_MainWindow(object):
         self.gridLayout_2.setObjectName("gridLayout_2")
         self.tableWidget = QtWidgets.QTableWidget(self.tab)
         self.tableWidget.setObjectName("tableWidget")
-        self.tableWidget.setColumnCount(7)
+        self.tableWidget.setColumnCount(8)
         self.tableWidget.setRowCount(0)
         item = QtWidgets.QTableWidgetItem()
         self.tableWidget.setHorizontalHeaderItem(0, item)
@@ -42,6 +42,10 @@ class Ui_MainWindow(object):
         self.tableWidget.setHorizontalHeaderItem(5, item)
         item = QtWidgets.QTableWidgetItem()
         self.tableWidget.setHorizontalHeaderItem(6, item)
+        item = QtWidgets.QTableWidgetItem()
+        self.tableWidget.setHorizontalHeaderItem(7, item)
+        self.tableWidget.horizontalHeader().setDefaultSectionSize(90)
+        self.tableWidget.horizontalHeader().setMinimumSectionSize(20)
         self.gridLayout_2.addWidget(self.tableWidget, 0, 0, 1, 1)
         self.tabWidget.addTab(self.tab, "")
         self.tab_2 = QtWidgets.QWidget()
@@ -66,6 +70,7 @@ class Ui_MainWindow(object):
         self.tableWidget_2.setHorizontalHeaderItem(5, item)
         item = QtWidgets.QTableWidgetItem()
         self.tableWidget_2.setHorizontalHeaderItem(6, item)
+        self.tableWidget_2.horizontalHeader().setDefaultSectionSize(90)
         self.gridLayout_3.addWidget(self.tableWidget_2, 0, 0, 1, 1)
         self.tabWidget.addTab(self.tab_2, "")
         self.tab_3 = QtWidgets.QWidget()
@@ -125,7 +130,7 @@ class Ui_MainWindow(object):
         self.maxtimebox.setGeometry(QtCore.QRect(230, 70, 71, 20))
         self.maxtimebox.setObjectName("maxtimebox")
         self.frame_2 = QtWidgets.QFrame(self.centralwidget)
-        self.frame_2.setGeometry(QtCore.QRect(10, 10, 384, 76))
+        self.frame_2.setGeometry(QtCore.QRect(10, 10, 381, 76))
         self.frame_2.setFrameShape(QtWidgets.QFrame.Box)
         self.frame_2.setFrameShadow(QtWidgets.QFrame.Sunken)
         self.frame_2.setObjectName("frame_2")
@@ -156,7 +161,7 @@ class Ui_MainWindow(object):
         self.gridLayout.addWidget(self.lineEdit, 0, 1, 1, 2)
         self.verticalLayout.addLayout(self.gridLayout)
         self.saveButton = QtWidgets.QPushButton(self.centralwidget)
-        self.saveButton.setGeometry(QtCore.QRect(950, 440, 241, 23))
+        self.saveButton.setGeometry(QtCore.QRect(970, 440, 221, 23))
         self.saveButton.setObjectName("saveButton")
         self.console = QtWidgets.QTextBrowser(self.centralwidget)
         self.console.setGeometry(QtCore.QRect(10, 250, 381, 211))
@@ -182,6 +187,9 @@ class Ui_MainWindow(object):
         self.console.setPalette(palette)
         self.console.setFrameShape(QtWidgets.QFrame.VLine)
         self.console.setObjectName("console")
+        self.debugbutton = QtWidgets.QPushButton(self.centralwidget)
+        self.debugbutton.setGeometry(QtCore.QRect(400, 440, 75, 23))
+        self.debugbutton.setObjectName("debugbutton")
         MainWindow.setCentralWidget(self.centralwidget)
         self.statusBar = QtWidgets.QStatusBar(MainWindow)
         self.statusBar.setLayoutDirection(QtCore.Qt.LeftToRight)
@@ -197,6 +205,7 @@ class Ui_MainWindow(object):
         self.pushButton_2.clicked.connect(MainWindow.udbrowse_clicked)
         self.pushButton_3.clicked.connect(MainWindow.generate_clicked)
         self.saveButton.clicked.connect(MainWindow.savebutton_clicked)
+        self.debugbutton.clicked.connect(MainWindow.debugbutton_clicked)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):
@@ -216,6 +225,8 @@ class Ui_MainWindow(object):
         item.setText(_translate("MainWindow", "ConWait"))
         item = self.tableWidget.horizontalHeaderItem(6)
         item.setText(_translate("MainWindow", "ConWait Time"))
+        item = self.tableWidget.horizontalHeaderItem(7)
+        item.setText(_translate("MainWindow", "Add?"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab), _translate("MainWindow", "Made"))
         item = self.tableWidget_2.horizontalHeaderItem(0)
         item.setText(_translate("MainWindow", "Transition Time"))
@@ -231,7 +242,7 @@ class Ui_MainWindow(object):
         item.setText(_translate("MainWindow", "ConWait"))
         item = self.tableWidget_2.horizontalHeaderItem(6)
         item.setText(_translate("MainWindow", "ConWait Time"))
-        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_2), _translate("MainWindow", "Duplicate"))
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_2), _translate("MainWindow", "Duplicates (will not add)"))
         item = self.tableWidget_3.horizontalHeaderItem(0)
         item.setText(_translate("MainWindow", "Error code"))
         item = self.tableWidget_3.horizontalHeaderItem(1)
@@ -256,12 +267,13 @@ class Ui_MainWindow(object):
         self.mintimebox.setPlaceholderText(_translate("MainWindow", "00:00:00"))
         self.label_6.setText(_translate("MainWindow", "and"))
         self.maxtimebox.setPlaceholderText(_translate("MainWindow", "23:59:59"))
-        self.lineEdit_2.setText(_translate("MainWindow", "C:/Users/Tfarhy/OneDrive - Network Rail/2020.11.24_XML backend for adding connections/udec18.xlsx"))
+        self.lineEdit_2.setText(_translate("MainWindow", "C:/Users/Tfarhy/OneDrive - Network Rail/2020.11.24_XML backend for adding connections/u170.xlsx"))
         self.label_2.setText(_translate("MainWindow", "Unit Diagram:"))
         self.label.setText(_translate("MainWindow", "RSX:"))
         self.pushButton_2.setText(_translate("MainWindow", "Browse..."))
         self.pushButton.setText(_translate("MainWindow", "Browse..."))
         self.lineEdit.setText(_translate("MainWindow", "C:/Users/Tfarhy/OneDrive - Network Rail/2020.11.24_XML backend for adding connections/longlands.rsx"))
-        self.saveButton.setText(_translate("MainWindow", "Add connections to RSX and save"))
+        self.saveButton.setText(_translate("MainWindow", "Add connections to RSX and save as..."))
+        self.debugbutton.setText(_translate("MainWindow", "Debug"))
         self.actionOpen.setText(_translate("MainWindow", "Open..."))
 

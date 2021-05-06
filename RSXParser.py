@@ -72,7 +72,8 @@ def findUniqueEntry(tree,trainName,stationID,time,index,secondsTolerance = 600):
         
 
 def connectionExists(entryWait, conn):
-    return any([entry.attrib == conn.attrib for entry in entryWait.getchildren()])
+    retval = [entry.attrib == conn.attrib for entry in entryWait.getchildren()]
+    return any(retval)
 
 
 def makecon(entryArr,
