@@ -6,20 +6,26 @@ Created on Tue Feb  9 10:21:22 2021
 
 Connection Macro Main module
 
-Top-level module containing bindings of PyQt buttons to Connection Macro module functions. Run Pyinstaller on this file.
+Top-level Connection Macro module containing the the GUI and main program loop.
 
+To set up the environment before compiling:
+conda env create -f environment.yml
+conda activate connectionmacro
+
+To compile:
 pyinstaller --clean --onefile --noconsole main.py -n ConnectionMacro.exe
 
+To update the GUI if you edit the ConnectionMacroUI.ui:
+pyuic5 '.\qt\ConnectionMacroUI.ui' -o ConnectionMacroUI.py'
+
 """
-#%%
+
 import sys
 
 from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog, QTableWidgetItem
 from PyQt5 import QtCore
 
 from ConnectionMacroUI import Ui_MainWindow
-#from UIConfig import ItemDelegate
-#pyuic5 '.\qt\ConnectionMacroUI.ui' -o ConnectionMacroUI.py'
 
 from connectionGenerator import GenerateConnections, AddConnections
 import UnitDiagramReader
@@ -87,8 +93,7 @@ class Window(QMainWindow, Ui_MainWindow):
         if self.pathToUD:
             self.lineEdit_2.setText(self.pathToUD)
             
-    #FIXME findUniqueEntry throws '24:02:01' error from dec19 unit diagram            
-    #TODO make entries autofill from saved [currently hardcoded defaults]
+    #FIXME findUniqueEntry throws '24:02:01' error from dec19 unit diagram
     #TODO minimum and maximum times
     #TODO make failed conns exportable
     #TODO more meaningful error messages
@@ -162,7 +167,7 @@ class Window(QMainWindow, Ui_MainWindow):
         
         if self.pathToSave:
             #make a copy of the tree object and regenerate the Result object since any previous run of the AddConnections function
-            #would have modified the elements inside Result 
+            #would have modified the elements inside self.result 
             self.tree = deepcopy(self._tree)
             self.result = GenerateConnections(tree=self.tree, DiagramObject=self.diagram, stationID=self.tiploc, 
                                           stationName = self.stationname)
