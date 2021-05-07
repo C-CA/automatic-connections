@@ -189,7 +189,7 @@ DEFAULT_HASHER = HumanHasher()
 uuid = DEFAULT_HASHER.uuid
 humanize = DEFAULT_HASHER.humanize
 humanize_list = DEFAULT_HASHER.humanize_list
-print('Running local humanhash.')
+
 if __name__ == "__main__":  # pragma: nocover
     import doctest
     # http://stackoverflow.com/a/25691978/6461688
