@@ -6,7 +6,10 @@ Created on Tue Feb  9 10:21:22 2021
 
 Connection Macro Main module
 
-Top-level module containing bindings of PyQt buttons to Connection macro modules. Run Pyinstaller on this file.
+Top-level module containing bindings of PyQt buttons to Connection Macro module functions. Run Pyinstaller on this file.
+
+pyinstaller --clean --onefile --noconsole main.py -n ConnectionMacro.exe
+
 """
 #%%
 import sys
@@ -15,28 +18,55 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog, QTableWidget
 from PyQt5 import QtCore
 
 from ConnectionMacroUI import Ui_MainWindow
+#from UIConfig import ItemDelegate
 #pyuic5 '.\qt\ConnectionMacroUI.ui' -o ConnectionMacroUI.py'
 
 from connectionGenerator import GenerateConnections, AddConnections
 import UnitDiagramReader
 from RSXParser import read, write
 from NRFunctions import ResultType, hashfile
-
 from copy import deepcopy
+
 
 class Window(QMainWindow, Ui_MainWindow):
     def __init__(self, parent = None):
         super().__init__(parent)
         self.setupUi(self)
+        self.tableWidget.setColumnWidth(0, 45)
+        self.tableWidget_2.setColumnWidth(0, 45)
+        
         self.connectSignalsSlots()
         self.result = ResultType()
         
-        self.statusBar.showMessage('Connection Macro pre-alpha v0.2')
+        self.statusBar.showMessage('Connection Macro pre-alpha build MAY07')
         
         self.available_ud_readers = [cls.__name__ for cls in UnitDiagramReader.Reader.__subclasses__()]
         
         for reader in self.available_ud_readers:
             self.udselector.addItem(reader)
+        
+        if getattr(sys, 'frozen', False):
+            self.frozen = True
+            self.debugbutton.setVisible(False)
+            self.lineEdit.setText('')
+            self.lineEdit_2.setText('')
+    
+    def cellChangedSlot(self, item):
+        self.tableWidget.blockSignals(True)
+        columnsOfSelectedCells = set([cell.column() for cell in self.tableWidget.selectedItems()])
+        
+        if item in self.tableWidget.selectedItems():
+            if len(columnsOfSelectedCells) == 1:                #only allow changing multiple cells if they are all in the same column
+                if columnsOfSelectedCells.pop() == 0:           #if it's the 0th column, we check and propogate the checkState to the highlightedCells.
+                    checkState = item.checkState()
+                    for highlightedCell in self.tableWidget.selectedItems():
+                        highlightedCell.setCheckState(checkState)
+                else:                                           #if it's any other column, check and propagate the text() value.
+                    text = item.text()
+                    for highlightedCell in self.tableWidget.selectedItems():
+                        highlightedCell.setText(text)
+                    
+        self.tableWidget.blockSignals(False)
         
     def connectSignalsSlots(self):
         pass
@@ -47,18 +77,16 @@ class Window(QMainWindow, Ui_MainWindow):
     def rsxbrowse_clicked(self):
         self.options = QFileDialog.Options()
         self.pathToRSX, _ = QFileDialog.getOpenFileName(self,"QFileDialog.getOpenFileName()", "","All Files (*)", 
-                                                        options=self.options)
-        
+                                                        options=self.options)       
         if self.pathToRSX:
             self.lineEdit.setText(self.pathToRSX)
     def udbrowse_clicked(self):
         self.options = QFileDialog.Options()
         self.pathToUD, _ = QFileDialog.getOpenFileName(self,"QFileDialog.getOpenFileName()", "","All Files (*)", 
                                                        options=self.options)
-        
         if self.pathToUD:
             self.lineEdit_2.setText(self.pathToUD)
-
+            
     #FIXME findUniqueEntry throws '24:02:01' error from dec19 unit diagram            
     #TODO make entries autofill from saved [currently hardcoded defaults]
     #TODO minimum and maximum times
@@ -66,56 +94,51 @@ class Window(QMainWindow, Ui_MainWindow):
     #TODO more meaningful error messages
     #TODO dropdown for Activity column in UI
     def generate_clicked(self):
-        self.console.append('Making connections...')
         self._tree = read(self.lineEdit.text())
         self.tree = deepcopy(self._tree)
         self.diagram = getattr(UnitDiagramReader,self.udselector.currentText())(self.lineEdit_2.text())
         self.tiploc = self.tiplocbox.text()
         self.stationname = self.stationnamebox.text()
+        self.console.append(f'Looking for connections at {self.tiploc}...')
         self.result = GenerateConnections(tree=self.tree, DiagramObject=self.diagram, stationID=self.tiploc, 
                                           stationName = self.stationname)
-        
-        self.console.append(f'Made {self.result.made.count} connections out of {self.result.tried.count} in diagram. Rejected {self.result.duplicate.count} duplicates and failed {self.result.failed.count}.')
-        
+        self.console.append(f'Found {self.result.made.count} connections out of {self.result.tried.count} in diagram. Rejected {self.result.duplicate.count} duplicates and failed {self.result.failed.count}.')
+
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab), f'Made [{self.result.made.count}]')
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_2), f'Duplicates in {self.lineEdit.text().split("/")[-1]} (will not add) [{self.result.duplicate.count}]')
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_3), f'Falied [{self.result.failed.count}]')
         
-        self.setData(self.tableWidget,self.result.made.get)
+        self.tableWidget.blockSignals(True)
+        self.setData(self.tableWidget,self.result.made.get, checkboxes=(True))
+        self.tableWidget.blockSignals(False)
         self.setData(self.tableWidget_2,self.result.duplicate.get)
         self.setFailed(self.tableWidget_3,self.result.failed.get)
         
-    def setData(self, widget, data):
-        
+        self.saveButton.setDisabled(False)
+
+    def setData(self, widget, data, checkboxes = False):
         widget.setRowCount(len(data))
-        
-        for row, item in enumerate(data):
-            attrib = item['conn'].attrib
+        for row, item in enumerate(data):            
             
-            columnMap = {0:'transitionTime',
-                         1:'operation',
-                         2:'stationId',
-                         4:'trainDeparture'}
-                
-            for key in columnMap.keys():
-                columnMap[key] = attrib[columnMap[key]]
-            columnMap[3] = item['row'][1]
-            columnMap[5] = item['row'][3]
-            columnMap[6] = item['row'][4]
-            
-            chkBoxItem = QTableWidgetItem()
-            chkBoxItem.setFlags(QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled)
-            chkBoxItem.setCheckState(QtCore.Qt.Unchecked)       
-            widget.setItem(row,7,chkBoxItem)
-            
-            columnMap[7] = chkBoxItem
-            
+            columnMap = {0:'', #checkbox placeholder
+                         1:'transitionTime',
+                         2:'operation',
+                         3:'stationId',
+                         5:'trainDeparture'}
+            for key in list(columnMap.keys())[1:]:
+                columnMap[key] = item['conn'].attrib[columnMap[key]]
+            columnMap[4] = item['row'][1]
+            columnMap[6] = item['row'][3]
+            columnMap[7] = item['row'][4]
             for key in columnMap.keys():
                 newitem = QTableWidgetItem(columnMap[key])
+                if key == 0 and checkboxes:
+                    newitem.setFlags(QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsSelectable)
+                    newitem.setCheckState(QtCore.Qt.Checked)                           
+                if key not in [0,1,2]:
+                    newitem.setFlags(newitem.flags() ^ QtCore.Qt.ItemIsEditable)
                 widget.setItem(row, key, newitem)
-            
-
-            
+             
     def setFailed(self, widget, data):
         widget.setRowCount(len(data))
         columnMap = {}
@@ -145,14 +168,21 @@ class Window(QMainWindow, Ui_MainWindow):
                                           stationName = self.stationname)
             
             #Update self.result object with values from Transition Time and Activity columns in self.tablewidget.
+            rows_to_be_removed = []
             for row_num in range(self.tableWidget.rowCount()):
-                self.result.made._contents[row_num]['conn'].attrib['transitionTime'] = self.tableWidget.item(row_num,0).text()
-                self.result.made._contents[row_num]['conn'].attrib['operation'] = self.tableWidget.item(row_num,1).text()            
+                self.result.made._contents[row_num]['conn'].attrib['transitionTime'] = self.tableWidget.item(row_num,1).text()
+                self.result.made._contents[row_num]['conn'].attrib['operation'] = self.tableWidget.item(row_num,2).text()
+                
+                if not self.tableWidget.item(row_num,0).checkState(): #if row is not checked
+                    rows_to_be_removed.append(row_num)
+                
+            for row_to_be_removed in sorted(rows_to_be_removed, reverse = True): #reverse = we start from the bottom so that the list indexes aren't thrown off
+                    del self.result.made._contents[row_to_be_removed]
             
             AddConnections(self.result)
             write(tree = self.tree, filename = self.pathToSave)
 
-            self.console.append(f'\nWrote {self.pathToSave} (hash {hashfile(self.pathToSave)})')
+            self.console.append(f'\nAdded {self.result.made.count} connections into \n{self.pathToSave} and saved. (hash {hashfile(self.pathToSave)})')
             #black-kilo-triple-social-quebec-quiet
 
             
