@@ -25,53 +25,107 @@ def GenerateConnections(tree, DiagramObject, stationID, stationName):
     result = ResultType()
     made_so_far = set()
     
-    location = DiagramObject.ud['Location']
-    arr = DiagramObject.ud['Arr']
-    dep = DiagramObject.ud['Dep']
-    train = DiagramObject.ud['Train']
+    if DiagramObject.standardised:
+        for i, udEntry in enumerate(DiagramObject.ud):
+            if udEntry['location'] == stationName:
+                
+                row = (stationID,
+                       udEntry['arrHeadcode'],
+                       udEntry['arrTime'],
+                       udEntry['depHeadcode'],
+                       udEntry['depTime'])
+                
+                result.tried.app({'row'         :row,
+                                  'entryArr'    :None,
+                                  'entryWait'   :None,
+                                  'conn'        :None})
+                try:
+                    #TODO provision for the [0:4] index to be variable
+                    entryArr    = rp.findUniqueEntry(tree,
+                                                     udEntry['arrHeadcode'][0:4],
+                                                     stationID,
+                                                     udEntry['arrTime'],
+                                                     -1) #binding reference to tree
+                    
+                    entryWait   = rp.findUniqueEntry(tree,
+                                                     udEntry['depHeadcode'][0:4],
+                                                     stationID,
+                                                     udEntry['depTime'],
+                                                     0)
+                    
+                    conn = rp.makecon(entryArr)
+                    conn_tuple = (tuple(entryWait.attrib.items()), tuple(conn.attrib.items()))
+                    
+                    if not rp.connectionExists(entryWait, conn) and not conn_tuple in made_so_far:
+                        
+                        made_so_far.add(conn_tuple)
+                        
+                        result.made.app({'row'          :row,
+                                          'entryArr'    :entryArr,
+                                          'entryWait'   :entryWait,
+                                          'conn'        :conn})
+                    else:
+                        result.duplicate.app({'row'     :row,
+                                          'entryArr'    :entryArr,
+                                          'entryWait'   :entryWait,
+                                          'conn'        :conn})
+                except ValueError as e:
+                    #FIXME the row number is wrong, because of standardised UD
+                    result.failed.app({'row'       :row,
+                                       'error'     :f'{e} at row {i+1}'})            
+                    print (f'{e} at row {i+1}')     
+                    
+        return result
     
-    for i, trainname in enumerate(train):
-        if trainname != DiagramObject.EmptyFill and train[i+1]  != DiagramObject.EmptyFill and train[i+1]!=trainname and location[i+1] in [f'{stationName}',] and location[i]!='Location':
-            #u170.range(f'A{i+1}:J{i+1}').color = (189, 211, 217)
-            
-            arrTime = th(arr[i+1])
-            depTime = th(dep[i+1])
-            
-            row = (stationID,train[i],arrTime,train[i+1],depTime)
-            
-            result.tried.app({'row'         :row,
-                              'entryArr'    :None,
-                              'entryWait'   :None,
-                              'conn'        :None})
-            
-            try:
-                #TODO provision for the [0:4] index to be variable
-                entryArr    = rp.findUniqueEntry(tree,train[i][0:4],stationID,arrTime,-1) #binding reference to tree
-                entryWait   = rp.findUniqueEntry(tree,train[i+1][0:4],stationID,depTime,0)
+    else:
+        
+        location = DiagramObject.ud['Location']
+        arr = DiagramObject.ud['Arr']
+        dep = DiagramObject.ud['Dep']
+        train = DiagramObject.ud['Train']
+        
+        for i, trainname in enumerate(train):
+            if trainname != DiagramObject.EmptyFill and train[i+1]  != DiagramObject.EmptyFill and train[i+1]!=trainname and location[i+1] in [f'{stationName}',] and location[i]!='Location':
+                #u170.range(f'A{i+1}:J{i+1}').color = (189, 211, 217)
                 
-                conn = rp.makecon(entryArr)
-                conn_tuple = (tuple(entryWait.attrib.items()), tuple(conn.attrib.items()))
+                arrTime = th(arr[i+1])
+                depTime = th(dep[i+1])
                 
-                if not rp.connectionExists(entryWait, conn) and not conn_tuple in made_so_far:
+                row = (stationID,train[i],arrTime,train[i+1],depTime)
+                
+                result.tried.app({'row'         :row,
+                                  'entryArr'    :None,
+                                  'entryWait'   :None,
+                                  'conn'        :None})
+                
+                try:
+                    #TODO provision for the [0:4] index to be variable
+                    entryArr    = rp.findUniqueEntry(tree,train[i][0:4],stationID,arrTime,-1) #binding reference to tree
+                    entryWait   = rp.findUniqueEntry(tree,train[i+1][0:4],stationID,depTime,0)
                     
-                    made_so_far.add(conn_tuple)
+                    conn = rp.makecon(entryArr)
+                    conn_tuple = (tuple(entryWait.attrib.items()), tuple(conn.attrib.items()))
                     
-                    result.made.app({'row'          :row,
-                                      'entryArr'    :entryArr,
-                                      'entryWait'   :entryWait,
-                                      'conn'        :conn})
-                else:
-                    result.duplicate.app({'row'     :row,
-                                      'entryArr'    :entryArr,
-                                      'entryWait'   :entryWait,
-                                      'conn'        :conn})
-            except ValueError as e:
-                #FIXME the row number is wrong, because of the pandas readexcel offset
-                result.failed.app({'row'       :row,
-                                   'error'     :f'{e} at row {i+1}'})            
-                print (f'{e} at row {i+1}')     
-                
-    return result
+                    if not rp.connectionExists(entryWait, conn) and not conn_tuple in made_so_far:
+                        
+                        made_so_far.add(conn_tuple)
+                        
+                        result.made.app({'row'          :row,
+                                          'entryArr'    :entryArr,
+                                          'entryWait'   :entryWait,
+                                          'conn'        :conn})
+                    else:
+                        result.duplicate.app({'row'     :row,
+                                          'entryArr'    :entryArr,
+                                          'entryWait'   :entryWait,
+                                          'conn'        :conn})
+                except ValueError as e:
+                    #FIXME the row number is wrong, because of the pandas readexcel offset
+                    result.failed.app({'row'       :row,
+                                       'error'     :f'{e} at row {i+1}'})            
+                    print (f'{e} at row {i+1}')     
+                    
+        return result
 
 
 def AddConnections(result):

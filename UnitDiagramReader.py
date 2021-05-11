@@ -24,7 +24,7 @@ from NRFunctions import timeStandardiser
 
 
 class Reader:
-    def __init__(self, pathToUD, standardised = False):
+    def __init__(self, pathToUD):
         self.EmptyFill = 'UDNONE'
         self. udEntryFormat = {
          'location'     :   None,
@@ -34,21 +34,20 @@ class Reader:
          'depHeadcode'  :   None,
          'activity'     :   None}
         
-        if standardised:
-            self.ud = self.StandardisedParse(pathToUD)
-        else:
-            self.ud = self.Parse(pathToUD)
+        self.standardised = True #default value
+        
+        self.ud = self.Parse(pathToUD)
     
     def Parse(self, pathToUD):
         raise NotImplementedError('Parse() not implemented')
-
-    def StandardisedParse(self, pathToUD):
-        raise NotImplementedError('StandardisedParse() not implemented')
 
 '''
 ScotRail Reader 1: user needs to drag and drop Word UD into Excel
 '''
 class ScotRailECML(Reader):
+    def __init__(self, pathToUD):
+        super().__init__(pathToUD)
+        self.standardised = False
     def Parse(self, pathToUD):
         return read_excel(pathToUD, usecols=[0,1,2,4], header=6, dtype = str).fillna(self.EmptyFill)
 
@@ -57,6 +56,9 @@ class ScotRailECML(Reader):
 ScotRail Reader 2: user needs to drag and drop Word UD into Excel
 '''
 class ScotRailDec19(Reader):
+    def __init__(self, pathToUD):
+        super().__init__(pathToUD)
+        self.standardised = False
     def Parse(self, pathToUD):
         return read_excel(pathToUD, usecols=[0,1,2,4], header=8, dtype = str).fillna(self.EmptyFill)
 
@@ -65,19 +67,12 @@ Avanti Reader 1: user needs to drag and drop Word UD into Excel, trim off all ro
 and trim all columns up to station name
 '''    
 class Avanti(Reader):
-    def StandardisedParse(self, pathToUD):
+    def Parse(self, pathToUD):
         udEntries = []
         z = read_excel(pathToUD, dtype = str)
         
         #create a list that looks like [(index,row_contents),(index,row_contents) ...]
         z = [j for i,j in z.iterrows()] 
-        udEntryFormat = {
-                 'location'     :   None,
-                 'arrTime'      :   None,
-                 'arrHeadcode'  :   None,
-                 'depTime'      :   None,
-                 'depHeadcode'  :   None,
-                 'activity'     :   None}
         
         for idx, row in enumerate(z):
             if idx == len(z)-1: #if second to last row, do nothing
@@ -85,7 +80,7 @@ class Avanti(Reader):
             else:
                 if z[idx+1][0] == z[idx][0]:
                     
-                    udEntry = udEntryFormat.copy()
+                    udEntry = self.udEntryFormat.copy()
                     
                     udEntry['location']     = z[idx][0]
                     udEntry['arrTime']      = z[idx][1]
@@ -107,9 +102,9 @@ if __name__ == '__main__':
     pass
     #print(ScotRailDec19('udec19.xlsx').ud)
     
-    #print(ScotRailECML('u170.xlsx').ud)
+    print(ScotRailECML('u170.xlsx').ud)
     
-    print(Avanti('uAvanti.xlsx', standardised=True).ud)
+    print(Avanti('uAvanti.xlsx').ud)
     
 #%%
 
