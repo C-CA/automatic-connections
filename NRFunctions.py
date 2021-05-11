@@ -14,6 +14,7 @@ import hashlib
 import humanhash
 from math import ceil
 from time import strftime, strptime, gmtime 
+from datetime import datetime
 
 
 #%%
@@ -86,6 +87,15 @@ def removeNone(cells):
             output.append(i)
     return output
 
+def timeStandardiser(input):
+    for time_format in ['%H:%M:%S','%H.%M','%H+%M','%H:%M']:
+        try:
+            return datetime.strptime(input,time_format).strftime('%H:%M:%S')
+        except ValueError:
+            pass
+    raise ValueError(f'cannot handle format of time string {input}')
+    
+    
 
 #refactor to use strptime()? also use datetime instead of time
 def timeHandler(input):
