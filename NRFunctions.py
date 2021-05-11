@@ -88,12 +88,14 @@ def removeNone(cells):
     return output
 
 def timeStandardiser(input):
+    input = str(input)
     for time_format in ['%H:%M:%S','%H.%M','%H+%M','%H:%M']:
         try:
             return datetime.strptime(input,time_format).strftime('%H:%M:%S')
         except ValueError:
             pass
-    raise ValueError(f'cannot handle format of time string {input}')
+    return(f'could not parse time string {input}')
+    #raise ValueError(f'cannot handle format of time string {input}')
     
     
 
