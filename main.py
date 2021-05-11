@@ -27,7 +27,7 @@ from PyQt5 import QtCore
 
 from ConnectionMacroUI import Ui_MainWindow
 
-from connectionGenerator import GenerateConnections, AddConnections
+from connectionGenerator import GenerateConnections, AddConnections, highlightExcel
 import UnitDiagramReader
 from RSXParser import read, write
 from NRFunctions import ResultType, hashfile
@@ -98,7 +98,7 @@ class Window(QMainWindow, Ui_MainWindow):
     #TODO make failed conns exportable
     #TODO more meaningful error messages
     #TODO dropdown for Activity column in UI
-    def generate_clicked(self):
+    def generate_clicked(self): #try not to raise exceptions after setData
         self._tree = read(self.lineEdit.text())
         self.tree = deepcopy(self._tree)
         self.diagram = getattr(UnitDiagramReader,self.udselector.currentText())(self.lineEdit_2.text())
@@ -119,6 +119,12 @@ class Window(QMainWindow, Ui_MainWindow):
         self.setData(self.tableWidget_2,self.result.duplicate.get)
         self.setFailed(self.tableWidget_3,self.result.failed.get)
         
+        if self.highlightbox.checkState(): 
+            if self.diagram.hasExcelRows:
+                highlightExcel(self.diagram, self.result)
+            else:
+                self.console.append('Excel highlighting not supported for diagram type.')
+        
         self.saveButton.setDisabled(False)
 
     def setData(self, widget, data, checkboxes = False):
@@ -135,6 +141,7 @@ class Window(QMainWindow, Ui_MainWindow):
             columnMap[4] = item['row'][1]
             columnMap[6] = item['row'][3]
             columnMap[7] = item['row'][4]
+            columnMap[8] = item['excelRow']
             for key in columnMap.keys():
                 newitem = QTableWidgetItem(columnMap[key])
                 if key == 0 and checkboxes:
@@ -154,6 +161,7 @@ class Window(QMainWindow, Ui_MainWindow):
             columnMap[3] = item['row'][2]
             columnMap[4] = item['row'][3]
             columnMap[5] = item['row'][4]
+            columnMap[6] = item['excelRow']
 
             for key in columnMap.keys():
                 newitem = QTableWidgetItem(columnMap[key])
