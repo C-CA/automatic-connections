@@ -94,6 +94,11 @@
           <string>ConWait Time</string>
          </property>
         </column>
+        <column>
+         <property name="text">
+          <string>Excel row #</string>
+         </property>
+        </column>
        </widget>
       </item>
      </layout>
@@ -148,6 +153,11 @@
           <string>ConWait Time</string>
          </property>
         </column>
+        <column>
+         <property name="text">
+          <string>Excel row #</string>
+         </property>
+        </column>
        </widget>
       </item>
      </layout>
@@ -187,6 +197,11 @@
         <column>
          <property name="text">
           <string>ConWait Time</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>Excel row #</string>
          </property>
         </column>
        </widget>
@@ -338,6 +353,22 @@
       <string>23:59:59</string>
      </property>
     </widget>
+    <widget class="QCheckBox" name="highlightbox">
+     <property name="geometry">
+      <rect>
+       <x>80</x>
+       <y>110</y>
+       <width>121</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="layoutDirection">
+      <enum>Qt::RightToLeft</enum>
+     </property>
+     <property name="text">
+      <string>Highlight Excel rows?</string>
+     </property>
+    </widget>
    </widget>
    <widget class="QFrame" name="frame_2">
     <property name="geometry">
@@ -360,7 +391,7 @@
        <item row="3" column="1">
         <widget class="QLineEdit" name="lineEdit_2">
          <property name="text">
-          <string>C:/Users/Tfarhy/OneDrive - Network Rail/2020.11.24_XML backend for adding connections/u170.xlsx</string>
+          <string>C:/Users/Tfarhy/OneDrive - Network Rail/2020.11.24_XML backend for adding connections/uAvanti.xlsx</string>
          </property>
         </widget>
        </item>
@@ -398,7 +429,7 @@
        <item row="0" column="1" colspan="2">
         <widget class="QLineEdit" name="lineEdit">
          <property name="text">
-          <string>C:/Users/Tfarhy/OneDrive - Network Rail/2020.11.24_XML backend for adding connections/longlands.rsx</string>
+          <string>C:/Users/Tfarhy/OneDrive - Network Rail/2020.11.24_XML backend for adding connections/donovan10.rsx</string>
          </property>
         </widget>
        </item>

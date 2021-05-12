@@ -32,7 +32,7 @@ def getIfExistsAndUnique(input):
     if len2(input)  ==1:
         return input[0]
     elif len2(input)==0:
-        raise ValueError('nonexistent')
+        raise ValueError('not found in timetable')
     elif len2(input)>0:
         raise ValueError('non-unique')
     else:
@@ -68,7 +68,7 @@ def findUniqueEntry(tree,trainName,stationID,time,index,secondsTolerance = 600):
     try:
         return getIfExistsAndUnique(entries2)
     except ValueError as errormsg:
-        raise ValueError(f'{trainName} @ {stationID} @ {time} @ index {index} is {errormsg}')
+        raise ValueError(f'{"train at end of run" if index == -1 else "train at start of run"} {trainName} @ {stationID} @ {time} was {errormsg}')
         
 
 def connectionExists(entryWait, conn):

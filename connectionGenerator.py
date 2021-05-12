@@ -17,6 +17,7 @@ instead go in RSXParser's function definitions and only be called here.
 from NRFunctions import hashfile, ResultType, timeHandler as th
 #from transitiontime import calculateTurnaround
 import RSXParser as rp
+import xlwings as xw
 
 #use datetime library instead
 from time import time
@@ -36,6 +37,7 @@ def GenerateConnections(tree, DiagramObject, stationID, stationName):
                        udEntry['depTime'])
                 
                 result.tried.app({'row'         :row,
+                                  'excelRow'    :udEntry['excelRow'],
                                   'entryArr'    :None,
                                   'entryWait'   :None,
                                   'conn'        :None})
@@ -53,32 +55,34 @@ def GenerateConnections(tree, DiagramObject, stationID, stationName):
                                                      udEntry['depTime'],
                                                      0)
                     
-                    conn = rp.makecon(entryArr)
+                    conn = rp.makecon(entryArr, operation = udEntry['activity'])
                     conn_tuple = (tuple(entryWait.attrib.items()), tuple(conn.attrib.items()))
                     
                     if not rp.connectionExists(entryWait, conn) and not conn_tuple in made_so_far:
                         
                         made_so_far.add(conn_tuple)
                         
-                        result.made.app({'row'          :row,
-                                          'entryArr'    :entryArr,
-                                          'entryWait'   :entryWait,
-                                          'conn'        :conn})
+                        result.made.app({'row'         :row,
+                                         'excelRow'    :udEntry['excelRow'],
+                                         'entryArr'    :entryArr,
+                                         'entryWait'   :entryWait,
+                                         'conn'        :conn})
                     else:
-                        result.duplicate.app({'row'     :row,
-                                          'entryArr'    :entryArr,
-                                          'entryWait'   :entryWait,
-                                          'conn'        :conn})
+                        result.duplicate.app({'row'         :row,
+                                              'excelRow'    :udEntry['excelRow'],
+                                              'entryArr'    :entryArr,
+                                              'entryWait'   :entryWait,
+                                              'conn'        :conn})
                 except ValueError as e:
                     #FIXME the row number is wrong, because of standardised UD
                     result.failed.app({'row'       :row,
-                                       'error'     :f'{e} at row {i+1}'})            
-                    print (f'{e} at row {i+1}')     
+                                       'excelRow'    :udEntry['excelRow'],
+                                       'error'     :f'{e}'})            
+                    print (f'{e}')     
                     
         return result
     
     else:
-        
         location = DiagramObject.ud['Location']
         arr = DiagramObject.ud['Arr']
         dep = DiagramObject.ud['Dep']
@@ -96,7 +100,8 @@ def GenerateConnections(tree, DiagramObject, stationID, stationName):
                 result.tried.app({'row'         :row,
                                   'entryArr'    :None,
                                   'entryWait'   :None,
-                                  'conn'        :None})
+                                  'conn'        :None,
+                                  'excelRow'    :None})
                 
                 try:
                     #TODO provision for the [0:4] index to be variable
@@ -113,17 +118,20 @@ def GenerateConnections(tree, DiagramObject, stationID, stationName):
                         result.made.app({'row'          :row,
                                           'entryArr'    :entryArr,
                                           'entryWait'   :entryWait,
-                                          'conn'        :conn})
+                                          'conn'        :conn,
+                                          'excelRow'    :None})
                     else:
                         result.duplicate.app({'row'     :row,
                                           'entryArr'    :entryArr,
                                           'entryWait'   :entryWait,
-                                          'conn'        :conn})
+                                          'conn'        :conn,
+                                          'excelRow'    :None})
                 except ValueError as e:
                     #FIXME the row number is wrong, because of the pandas readexcel offset
                     result.failed.app({'row'       :row,
-                                       'error'     :f'{e} at row {i+1}'})            
-                    print (f'{e} at row {i+1}')     
+                                       'error'     :f'{e}',
+                                       'excelRow'  :None})            
+                    print (f'{e}')
                     
         return result
 
@@ -136,9 +144,29 @@ def AddConnections(result):
         
         if not rp.connectionExists(entryWait, conn):
             entryWait.append(conn)
+
+def highlightExcel(DiagramObject, result):
+    assert DiagramObject.hasExcelRows, 'Unit diagram was not read from Excel'
+    book = xw.Book(DiagramObject.pathToUD)
+    assert len(book.sheets) ==1, 'Excel file has multiple sheets. Highlighting is only supported for files with 1 sheet.'
+    sheet = book.sheets[0]
+    made_color, duplicate_color, failed_color = (142, 255, 140),(191, 191, 191),(255, 120, 120)
+    
+    for entry in result.made.get:
+        excelRow = int(entry['excelRow'])
+        sheet.range(f'A{excelRow}:H{excelRow+1}').color = made_color
+        sheet.range(f'H{excelRow}').value = f'searched for: {entry["row"]}'
         
-    #DEBUFGLAG
-    #entryWait.append(rp.et.Element('plus'))
+    for entry in result.duplicate.get:
+        excelRow = int(entry['excelRow'])
+        sheet.range(f'A{excelRow}:H{excelRow+1}').color = duplicate_color
+        sheet.range(f'H{excelRow}').value = f'searched for: {entry["row"]}'
+    
+    for entry in result.failed.get:
+        excelRow = int(entry['excelRow'])
+        sheet.range(f'A{excelRow}:H{excelRow+1}').color = failed_color
+        sheet.range(f'H{excelRow}').value = f'searched for: {entry["row"]}, error:{entry["error"]}'
+        
 
 #%% read files
 if __name__ == '__main__':
@@ -184,25 +212,4 @@ if __name__ == '__main__':
     print(f'\nWrote {outputfile} (hash {hashfile(outputfile)})')
     
     print(f"--- {time()-start_time} seconds ---")
-    
-    # wb = xw.Book('Input.xlsx')
-    # resultsheet = wb.sheets['Results']
-    # resultsheet.clear()
-    # y = 1
-    
-    # for attr , colour in zip(['failed','made','duplicate'],[(235, 143, 143),(190, 209, 151),(204, 204, 204)]):
-    #     x = getattr(getattr(result,attr),'get')
-    #     count = getattr(getattr(result,attr),'count')
-        
-    #     resultsheet.range(f'A{y}').value = x
-        
-    #     if attr == 'failed':
-    #         resultsheet.range(f'F{y}').value = list(zip(getattr(getattr(result,attr),'errors')))
-            
-    
-    #     resultsheet.range(f'A{y}:E{y+count-1}').color = colour
-        
-    #     y = y+ count
-    
-    # #done
         
