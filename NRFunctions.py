@@ -89,7 +89,7 @@ def removeNone(cells):
 
 def timeStandardiser(input):
     input = str(input)
-    for time_format in ['%H:%M:%S','%H.%M','%H+%M','%H:%M']:
+    for time_format in ['%H:%M:%S','%H.%M','%H+%M','%H:%M','%H']:
         try:
             return datetime.strptime(input,time_format).strftime('%H:%M:%S')
         except ValueError:
