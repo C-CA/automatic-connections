@@ -12,15 +12,28 @@ To set up the environment before compiling:
 conda env create -f environment.yml
 conda activate connectionmacro
 
+To run:
+python main.py
+
 To compile:
 pyinstaller --clean --onefile --noconsole main.py -n ConnectionMacro.exe
+
+If, after compiling, the .exe does not run for whatever reason, compile it in console mode:
+pyinstaller --clean --onefile --noconsole main.py -n ConnectionMacro.exe
+
+And run ConnectionMacro.exe from a terminal to read the error description.
 
 To update the GUI if you edit the ConnectionMacroUI.ui:
 pyuic5 '.\qt\ConnectionMacroUI.ui' -o ConnectionMacroUI.py'
 
+To export an environment:
+conda env export -n connectionmacro --from-history | Out-File environment.yml -Encoding utf8
+
+Make sure the encoding is utf-8.
 """
 
 import sys
+import traceback
 
 from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog, QTableWidgetItem
 from PyQt5 import QtCore
@@ -31,8 +44,8 @@ from connectionGenerator import GenerateConnections, AddConnections, highlightEx
 import UnitDiagramReader
 from RSXParser import read, write
 from NRFunctions import ResultType, hashfile
-from copy import deepcopy
 
+from copy import deepcopy
 
 class Window(QMainWindow, Ui_MainWindow):
     def __init__(self, parent = None):
@@ -44,13 +57,13 @@ class Window(QMainWindow, Ui_MainWindow):
         self.connectSignalsSlots()
         self.result = ResultType()
         
-        self.statusBar.showMessage('Connection Macro pre-alpha build MAY07')
+        self.statusBar.showMessage('Ready')
         
         self.available_ud_readers = [cls.__name__ for cls in UnitDiagramReader.Reader.__subclasses__()]
         
         for reader in self.available_ud_readers:
             self.udselector.addItem(reader)
-        
+        #sys.frozen = True
         if getattr(sys, 'frozen', False):
             self.frozen = True
             self.debugbutton.setVisible(False)
@@ -82,13 +95,13 @@ class Window(QMainWindow, Ui_MainWindow):
     
     def rsxbrowse_clicked(self):
         self.options = QFileDialog.Options()
-        self.pathToRSX, _ = QFileDialog.getOpenFileName(self,"QFileDialog.getOpenFileName()", "","All Files (*)", 
+        self.pathToRSX, _ = QFileDialog.getOpenFileName(self,"Load RSX", "","RailSys RSX file (*.rsx)", 
                                                         options=self.options)       
         if self.pathToRSX:
             self.lineEdit.setText(self.pathToRSX)
     def udbrowse_clicked(self):
         self.options = QFileDialog.Options()
-        self.pathToUD, _ = QFileDialog.getOpenFileName(self,"QFileDialog.getOpenFileName()", "","All Files (*)", 
+        self.pathToUD, _ = QFileDialog.getOpenFileName(self,"Load unit digram", "","All Files (*)", 
                                                        options=self.options)
         if self.pathToUD:
             self.lineEdit_2.setText(self.pathToUD)
@@ -99,6 +112,7 @@ class Window(QMainWindow, Ui_MainWindow):
     #TODO more meaningful error messages
     #TODO dropdown for Activity column in UI
     def generate_clicked(self): #try not to raise exceptions after setData
+        #self.console.clear()
         self._tree = read(self.lineEdit.text())
         self.tree = deepcopy(self._tree)
         self.diagram = getattr(UnitDiagramReader,self.udselector.currentText())(self.lineEdit_2.text())
@@ -199,11 +213,20 @@ class Window(QMainWindow, Ui_MainWindow):
             #black-kilo-triple-social-quebec-quiet
 
             
-def excepthook(type, value, tb):
-    win.console.append('******  Error  *********')
-    win.console.append(str(type))      
-    win.console.append(str(value))      
-    win.console.append(str(tb.tb_frame))
+def excepthook(typ, value, tb):
+    if typ is PermissionError:
+        win.console.append(f'Your Unit Diagram {value.filename.split("/")[-1]} is open. Please close it.')  
+        
+    else:
+        win.console.append('******  Error  *********')
+  
+        win.console.append(value.__repr__())
+        win.console.append('')
+        
+        #if not getattr(sys, 'frozen', False):
+        for line in traceback.format_tb(tb):
+            win.console.append(line)      
+    #win.console.append(str(tb.tb_frame))
     
 if __name__ =='__main__':
     sys.excepthook = excepthook
