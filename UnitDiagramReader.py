@@ -94,34 +94,33 @@ class Avanti(Reader):
         
         return udEntries
 
-
 '''
 ScotRail Reader 1: user needs to drag and drop Word UD into Excel
 '''
-class ScotRailECML(Reader):
+class ScotRail(Reader):
     def __init__(self, pathToUD):
         super().__init__(pathToUD)
         self.standardised = False
     def Parse(self, pathToUD):
-        return read_excel(pathToUD, usecols=[0,1,2,4], header=6, dtype = str).fillna(self.EmptyFill)
+        return read_excel(pathToUD, usecols=[0,1,2,4], header=0, dtype = str).fillna(self.EmptyFill)
 
 
-'''
-ScotRail Reader 2: user needs to drag and drop Word UD into Excel and trim all rows/cols
-so that Location-Arr-Dep header is in the top left corner
-'''
-class ScotRailDec19(Reader):
-    def __init__(self, pathToUD):
-        super().__init__(pathToUD)
-        self.standardised = False
-    def Parse(self, pathToUD):
-        return read_excel(pathToUD, usecols=[0,1,2,4], header=8, dtype = str).fillna(self.EmptyFill)
+# '''s
+# ScotRail Reader 2: user needs to drag and drop Word UD into Excel and trim all rows/cols
+# so that Location-Arr-Dep header is in the top left corner
+# '''
+# class ScotRailDec19(Reader):
+#     def __init__(self, pathToUD):
+#         super().__init__(pathToUD)
+#         self.standardised = False
+#     def Parse(self, pathToUD):
+#         return read_excel(pathToUD, usecols=[0,1,2,4], header=8, dtype = str).fillna(self.EmptyFill)
 
 
 
-class FTPE(Reader):
-    pass
-    #def Parse(self, pathToUD):
+# class FTPE(Reader):
+#     pass
+#     #def Parse(self, pathToUD):
         
         
         #return None

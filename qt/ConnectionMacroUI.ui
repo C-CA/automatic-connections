@@ -23,7 +23,7 @@
    </size>
   </property>
   <property name="windowTitle">
-   <string>Connection Macro</string>
+   <string>Connection Macro pre-alpha build MAY14</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <property name="acceptDrops">
@@ -56,7 +56,7 @@
         </attribute>
         <column>
          <property name="text">
-          <string/>
+          <string>Add?</string>
          </property>
         </column>
         <column>

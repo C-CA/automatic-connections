@@ -224,7 +224,9 @@ class Ui_MainWindow(object):
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "Connection Macro"))
+        MainWindow.setWindowTitle(_translate("MainWindow", "Connection Macro pre-alpha build MAY14"))
+        item = self.tableWidget.horizontalHeaderItem(0)
+        item.setText(_translate("MainWindow", "Add?"))
         item = self.tableWidget.horizontalHeaderItem(1)
         item.setText(_translate("MainWindow", "Transition Time"))
         item = self.tableWidget.horizontalHeaderItem(2)
