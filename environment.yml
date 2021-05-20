@@ -1,4 +1,4 @@
-name: connectionmacro
+﻿name:connectionmacro
 channels:
   - defaults
   - conda-forge
@@ -10,3 +10,4 @@ dependencies:
   - pandas
   - xlrd
   - lxml
+  - xlwings

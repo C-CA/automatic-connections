@@ -1,7 +1,7 @@
 """
-Created on Fri Nov 27 17:06:59 2020
-
 Function container module for common C&CA Python utility functions.
+
+Created on Fri Nov 27 17:06:59 2020
 
 @author: tfahry
 """
@@ -14,7 +14,7 @@ import hashlib
 import humanhash
 from math import ceil
 from time import strftime, strptime, gmtime 
-from datetime import datetime
+from datetime import datetime, timedelta
 
 
 #%%
@@ -61,7 +61,7 @@ class ResultType:
 
 #%%
 """
-Function definitions.
+Function definitions. Not all of these are used in the Connection Macro.
 """
 
 def log(func):
@@ -89,17 +89,34 @@ def removeNone(cells):
 
 def timeStandardiser(input):
     input = str(input)
-    for time_format in ['%H:%M:%S','%H.%M','%H+%M','%H:%M','%H']:
+    for time_format in ['%H:%M:%S','%H.%M','%H+%M','%H:%M','%H:%M½','%j&%H:%M','%H']:
         try:
-            return datetime.strptime(input,time_format).strftime('%H:%M:%S')
+            time_object = datetime.strptime(input, time_format)
+            if time_format == '%H:%M½':
+                time_object = time_object + timedelta(seconds=30)
+            return time_object.strftime('%H:%M:%S')
         except ValueError:
             pass
     return(f'could not parse time string {input}')
     #raise ValueError(f'cannot handle format of time string {input}')
-    
-    
 
-#refactor to use strptime()? also use datetime instead of time
+
+#copied from stackoverflow
+def convert_to_excel_address(row, col):
+    """ Convert given row and column number to an Excel-style cell name. """
+    LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+    result = []
+    col+=1
+    while col:
+        col, rem = divmod(col-1, 26)
+        result[:0] = LETTERS[rem]
+    return ''.join(result) + str(row+1)
+
+
+def get_first_element_of_list(input_list):
+    return next(iter(input_list), None)
+
+#old function, not used anymore
 def timeHandler(input):
     if type(input) is str:
         if '&' in input:
