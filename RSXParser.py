@@ -2,7 +2,6 @@
 RSXParser Module
 
 Created on Mon Nov 23 11:18:42 2020
-Requires Python 3.6 or newer.
 
 @author: tfahry, Network Rail C&CA
 
@@ -22,8 +21,7 @@ from lxml import etree as et
 from datetime import datetime
 
 
-#better length function that returns the length of any iterator, not just ones with a __len__().  
-#warning: will exhaust any generator passed to it! Is also O(n), compared to len() which is O(1) 
+#better length function. do not use with generators.
 def len2(input): 
     return sum(1 for _ in input)
 
@@ -72,8 +70,8 @@ def findUniqueEntry(tree,trainName,stationID,time,index,secondsTolerance = 600):
         
 
 def connectionExists(entryWait, conn):
-    retval = [entry.attrib == conn.attrib for entry in entryWait.getchildren()]
-    return any(retval)
+    are_existing_children_same = [entry.attrib['trainNumber'] == conn.attrib['trainNumber'] for entry in entryWait.getchildren()]
+    return any(are_existing_children_same)
 
 
 def makecon(entryArr,
@@ -110,82 +108,3 @@ def read(filename): #reads an XML and returns an ElementTree object
 def write(tree,filename):
     et.indent(tree,space='\t')
     tree.write(file = filename, pretty_print=True, xml_declaration=True, encoding="UTF-8", standalone="yes")
-    
-    
-#%%
-"""
-Demo code. Will not be run if imported as a module.
-"""
-
-if __name__ == '__main__':
-    modelname = 'mml'
-    inputfilename   = modelname + '.rsx'
-    outputfilename  = modelname + '_progadd.rsx'
-    
-    tree = read(inputfilename)
-    conns = tree.findall('.//connection')
-    
-    print(f'{len2(conns)} connections found in {inputfilename}.')
-    
-    #exclude =   ['1P11','1P31'] #trains that are already known to be non-unique due to user error (duplication), whose connections will raise ValueError in next cell
-    exclude =   []
-    
-    conns2 =    [] #connections that did not raise ValueError in this cell that will be deleted for recursive testing and whose attributes will be appended to [output]
-    output =    []
-    faulty0 =   [] #connections whose trains raised ValueError in THIS cell due to non-uniquness based on train *number* (possibly due to duplication)
-    
-    for conn in conns:
-        try:
-            if 'numbervar' in conn.attrib:
-                pt = gu(tree.findall(f'.//train[@number="{conn.attrib["trainNumber"]}"][@numbervar = "{conn.attrib["numbervar"]}"]//entry[@stationID="{conn.attrib["stationId"]}"][@departure="{conn.attrib["trainDeparture"]}"]'))
-            else:
-                pt = gu(tree.findall(f'.//train[@number="{conn.attrib["trainNumber"]}"]//entry[@stationID="{conn.attrib["stationId"]}"][@departure="{conn.attrib["trainDeparture"]}"]'))
-    
-                
-            if pt.getparent().getparent().attrib['name'] not in exclude:
-                
-                conns2.append(conn)
-                output.append((conn.attrib['stationId'],
-                               pt.getparent().getparent().attrib['name'],
-                               conn.attrib['trainDeparture'],
-                               conn.getparent().getparent().getparent().attrib['name'],
-                               conn.getparent().attrib['departure'],
-                               conn.attrib['transitionTime'],
-                               conn.attrib['validityTime'],
-                               conn.attrib['operation']))
-        except ValueError:
-            faulty0.append(conn)        
-            print('warning: ValueError raised in cell 0')
-    
-    for conn in conns2:
-        conn.getparent().remove(conn)
-    
-    print(f'{len2(faulty0)} connections were non-unique based on number and were not removed.')
-    print(f'{len2(conns2)} connections removed and attributes recorded.\n')
-#%%
-    progconns = []
-    faulty =    [] #connections whose trains raised ValueError from FindUniqueEntry due to non-uniquness based on train *name*
-    
-    for row in output:
-        try:
-            progconn = makecon(entryArr = findUniqueEntry(tree,row[1],row[0],row[2],-1),
-                               transitionTime = row[5],
-                               validityTime = row[6],
-                               operation = row[7])
-            
-            entryWait = findUniqueEntry(tree,row[3],row[0],row[4],0)
-            if not connectionExists(entryWait,progconn):
-                entryWait.append(progconn)
-                progconns.append(progconn)
-            else:
-                print(f'warning: {row} is duplicate')
-                
-        except ValueError:
-            faulty.append(row)
-            
-    print(f'{len2(faulty)} connections were non-unique based on name and were not generated.')
-    print(f'{len2(progconns)} connections generated and added to tree.')
-    
-    write(tree, outputfilename)
-    
-    print(f'Tree written to {outputfilename}.')
