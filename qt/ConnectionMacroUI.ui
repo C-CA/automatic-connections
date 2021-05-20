@@ -23,7 +23,7 @@
    </size>
   </property>
   <property name="windowTitle">
-   <string>Connection Macro pre-alpha build MAY14</string>
+   <string/>
   </property>
   <widget class="QWidget" name="centralwidget">
    <property name="acceptDrops">
@@ -213,9 +213,9 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>100</y>
+      <y>130</y>
       <width>381</width>
-      <height>141</height>
+      <height>161</height>
      </rect>
     </property>
     <property name="frameShape">
@@ -234,7 +234,7 @@
       </rect>
      </property>
      <property name="text">
-      <string>Generate connections with UD station name</string>
+      <string>Find connections with UD station name</string>
      </property>
      <property name="alignment">
       <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -292,7 +292,7 @@
      <property name="geometry">
       <rect>
        <x>210</x>
-       <y>110</y>
+       <y>120</y>
        <width>161</width>
        <height>23</height>
       </rect>
@@ -369,6 +369,22 @@
       <string>Highlight Excel rows?</string>
      </property>
     </widget>
+    <widget class="QCheckBox" name="findallbox">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>130</y>
+       <width>191</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="layoutDirection">
+      <enum>Qt::RightToLeft</enum>
+     </property>
+     <property name="text">
+      <string>Find all?</string>
+     </property>
+    </widget>
    </widget>
    <widget class="QFrame" name="frame_2">
     <property name="geometry">
@@ -376,7 +392,7 @@
       <x>10</x>
       <y>10</y>
       <width>381</width>
-      <height>76</height>
+      <height>111</height>
      </rect>
     </property>
     <property name="frameShape">
@@ -385,57 +401,84 @@
     <property name="frameShadow">
      <enum>QFrame::Sunken</enum>
     </property>
-    <layout class="QVBoxLayout" name="verticalLayout">
-     <item>
-      <layout class="QGridLayout" name="gridLayout">
-       <item row="3" column="1">
-        <widget class="QLineEdit" name="lineEdit_2">
-         <property name="text">
-          <string>C:/Users/Tfarhy/OneDrive - Network Rail/2020.11.24_XML backend for adding connections/uAvanti.xlsx</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="0">
-        <widget class="QLabel" name="label_2">
-         <property name="text">
-          <string>Unit Diagram:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="0">
-        <widget class="QLabel" name="label">
-         <property name="text">
-          <string>RSX:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="3">
-        <widget class="QPushButton" name="pushButton_2">
-         <property name="text">
-          <string>Browse...</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="3">
-        <widget class="QPushButton" name="pushButton">
-         <property name="text">
-          <string>Browse...</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="2">
-        <widget class="QComboBox" name="udselector"/>
-       </item>
-       <item row="0" column="1" colspan="2">
-        <widget class="QLineEdit" name="lineEdit">
-         <property name="text">
-          <string>C:/Users/Tfarhy/OneDrive - Network Rail/2020.11.24_XML backend for adding connections/donovan10.rsx</string>
-         </property>
-        </widget>
-       </item>
-      </layout>
-     </item>
-    </layout>
+    <widget class="QWidget" name="">
+     <property name="geometry">
+      <rect>
+       <x>11</x>
+       <y>11</y>
+       <width>359</width>
+       <height>91</height>
+      </rect>
+     </property>
+     <layout class="QGridLayout" name="gridLayout">
+      <item row="3" column="1">
+       <widget class="QLineEdit" name="lineEdit_2">
+        <property name="text">
+         <string>C:/Users/Tfarhy/OneDrive - Network Rail/2020.11.24_XML backend for adding connections/uAvanti.xlsx</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="3">
+       <widget class="QPushButton" name="pushButton">
+        <property name="text">
+         <string>Browse...</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1" colspan="2">
+       <widget class="QLineEdit" name="lineEdit">
+        <property name="text">
+         <string>C:/Users/Tfarhy/OneDrive - Network Rail/2020.11.24_XML backend for adding connections/donovan10.rsx</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="2">
+       <widget class="QComboBox" name="udselector"/>
+      </item>
+      <item row="3" column="3">
+       <widget class="QPushButton" name="pushButton_2">
+        <property name="text">
+         <string>Browse...</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0">
+       <widget class="QLabel" name="label_2">
+        <property name="text">
+         <string>Unit Diagram:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0">
+       <widget class="QLabel" name="label">
+        <property name="text">
+         <string>RSX:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="0">
+       <widget class="QLabel" name="label_7">
+        <property name="text">
+         <string>Loc. mapping</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="3">
+       <widget class="QPushButton" name="pushButton_4">
+        <property name="text">
+         <string>Browse...</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="1" colspan="2">
+       <widget class="QLineEdit" name="lineEdit_3">
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
    </widget>
    <widget class="QPushButton" name="saveButton">
     <property name="enabled">
@@ -457,9 +500,9 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>250</y>
+      <y>300</y>
       <width>381</width>
-      <height>211</height>
+      <height>161</height>
      </rect>
     </property>
     <property name="palette">
@@ -656,6 +699,22 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>pushButton_4</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>locationmappingbrowse_clicked()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>939</x>
+     <y>421</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>600</x>
+     <y>245</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>rsxbrowse_clicked()</slot>
@@ -665,5 +724,6 @@
   <slot>debugbutton_clicked()</slot>
   <slot>cellChangedSlot()</slot>
   <slot>cellActivatedSlot()</slot>
+  <slot>locationmappingbrowse_clicked()</slot>
  </slots>
 </ui>
