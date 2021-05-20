@@ -1,31 +1,39 @@
-# -*- coding: utf-8 -*-
 """
+Unit diagram reader.
+
 Created on Mon Feb  1 15:33:07 2021
 
-@author: Tfahry
+@author: tfahry, Network Rail C&CA
 
-Unit diagram reader.
+
 
 the (new) standardized UD entry format - transform everything into this
 
-UDEntry = 
-{location : 
- arrTime  :
- arrHeadcode:
- depTime  :
- depHeadcode :
- activity :     
- }
-
+{location       : e.g. Edinburgh
+ arrTime        : e.g. '06:34:00'
+ arrHeadcode    : e.g. 1K12
+ depTime        : e.g. '06:51:00'
+ depHeadcode    : e.g. 1K51
+ activity       : e.g. 'split'  (can be'split', 'join' or 'turnaround')
+ excelRow       : [{"cellRange": "A1:B1", "content": 'arr'},
+                   {"cellRange": "A2:B2", "content": 'wait'}
+                   {"cellRange": "D1",    "content": 'activity'}]
+} 
 """
 
 from pandas import read_excel
-from NRFunctions import timeStandardiser
-from lxml import etree as et
+from lxml import etree as et, objectify
 
+from NRFunctions import timeStandardiser, convert_to_excel_address as c2e, get_first_element_of_list as n
+from re import compile
+
+'''
+Base Reader class. All UDs should inherit from this class and define their own Parse() function that returns 
+a list of entries that are formatted according to the udEntryFormat.
+'''
 class Reader:
     def __init__(self, pathToUD):
-        self.EmptyFill = 'UDNONE'
+        self.EmptyFill = 'UDNONE' #define what to fill empty cells with
         self. udEntryFormat = {
          'location'     :   None,
          'arrTime'      :   None,
@@ -44,8 +52,7 @@ class Reader:
     
     def Parse(self, pathToUD):
         raise NotImplementedError('Parse() not implemented')
-        
-        
+                
 '''
 Avanti Reader: user needs to drag and drop Word UD into Excel, trim off all rows up to "Diagram:" row 
 and trim all columns up to station name
@@ -57,73 +64,232 @@ class Avanti(Reader):
         
     def Parse(self, pathToUD):
         udEntries = []
-        z = read_excel(pathToUD, dtype = str, header = None)
-            
-        #create a list that looks like [(index,row_contents),(index,row_contents) ...]
-        z = [j for i,j in z.iterrows()] 
-
-        for idx, row in enumerate(z):
-            if idx == len(z)-1: #if second to last row, do nothing
-                pass
-            else:
-                if z[idx+1].iloc[0] == z[idx].iloc[0]:
+        z  = read_excel(pathToUD, dtype = str, header = None).fillna(self.EmptyFill)
+        
+        #create a list of rows
+        z  = [j for i,j in z.iterrows()] 
+        
+        #specify the format <num><letter><num><num> that we will check headcodes against e.g. 1K11
+        headcode_check = compile('[0-9][A-Za-z][0-9][0-9]') 
+        
+        station_column_no = 0
+        arr_time_column_no = 1
+        dep_time_column_no = 2
+        activity_column_no = 4
+        headcode_column_no = 3
+        final_column_no = 6
+        
+        #first pass: transform sheet to udEntries
+        for row_num, row in enumerate(z):
+            #if the current row has a non-empty station name, and its headcode cell matches the format [0-9][A-Za-z][0-9][0-9]
+            if z[row_num].iloc[station_column_no] \
+            and headcode_check.match(z[row_num].iloc[headcode_column_no]):
+                
+                #...check 1 row above: if this test passes, there is no gap
+                if headcode_check.match(z[row_num-1].iloc[headcode_column_no]):
+                    if not z[row_num].iloc[headcode_column_no] == z[row_num-1].iloc[headcode_column_no]:
+                        
+                        udEntry = self.udEntryFormat.copy()
+                        
+                        udEntry['location']     = z[row_num].iloc[station_column_no]
+                        udEntry['arrTime']      = z[row_num].iloc[arr_time_column_no]
+                        udEntry['arrHeadcode']  = headcode_check.match(z[row_num-1].iloc[headcode_column_no]).group()
+                        udEntry['depTime']      = z[row_num].iloc[dep_time_column_no]
+                        udEntry['depHeadcode']  = headcode_check.match(z[row_num].iloc[headcode_column_no]).group()
+                        if z[row_num-1].iloc[activity_column_no] != self.EmptyFill:
+                            udEntry['activity'] = z[row_num-1].iloc[activity_column_no]
+                        elif z[row_num].iloc[activity_column_no] != self.EmptyFill:
+                            udEntry['activity'] = z[row_num].iloc[activity_column_no]
+                        else:
+                            udEntry['activity'] = self.EmptyFill
+                        udEntry['excelRow']     = {'highlight_regions':[{"cellRange": f'{c2e(row_num-1,station_column_no)}:{c2e(row_num-1,final_column_no)}'   , 'content': 'wait'    },
+                                                                        {"cellRange": f'{c2e(row_num  ,station_column_no)}:{c2e(row_num  ,final_column_no)}'   , 'content': 'arr'     },
+                                                                        {"cellRange": f'{c2e(row_num ,activity_column_no)}:{c2e(row_num-1,activity_column_no)}', 'content': 'activity'}],
+                                                   'annotation_cell'  : c2e(row_num, final_column_no+2)
+                                                  }
+                        
+                        udEntries.append(udEntry)
                     
-                    udEntry = self.udEntryFormat.copy()
-                    
-                    udEntry['location']     = z[idx].iloc[0]
-                    udEntry['arrTime']      = z[idx].iloc[1]
-                    udEntry['arrHeadcode']  = z[idx-1].iloc[3]
-                    udEntry['depTime']      = z[idx+1].iloc[2]
-                    udEntry['depHeadcode']  = z[idx+1].iloc[3]
-                    udEntry['activity']     = z[idx].iloc[4]
-                    udEntry['excelRow']     = str(idx+1)
-                    
-                    udEntries.append(udEntry)
-                    #sheet.range(f'A{idx}').color = (140, 184, 255)
-
+                #...or check 2 rows above, if this passes, the rows have a gap in between
+                elif headcode_check.match(z[row_num-2].iloc[headcode_column_no]):
+                    if not z[row_num].iloc[headcode_column_no] == z[row_num-2].iloc[headcode_column_no]:
+                        
+                        udEntry = self.udEntryFormat.copy()
+                        
+                        udEntry['location']     = z[row_num].iloc[station_column_no]
+                        udEntry['arrTime']      = z[row_num-1].iloc[arr_time_column_no]
+                        udEntry['arrHeadcode']  = headcode_check.match(z[row_num-2].iloc[headcode_column_no]).group()
+                        udEntry['depTime']      = z[row_num].iloc[dep_time_column_no]
+                        udEntry['depHeadcode']  = headcode_check.match(z[row_num].iloc[headcode_column_no]).group()
+                        if z[row_num-2].iloc[activity_column_no] != self.EmptyFill:
+                            udEntry['activity'] = z[row_num-2].iloc[activity_column_no]
+                        elif z[row_num-1].iloc[activity_column_no] != self.EmptyFill:
+                            udEntry['activity'] = z[row_num-1].iloc[activity_column_no]
+                        elif z[row_num].iloc[activity_column_no] != self.EmptyFill:
+                            udEntry['activity'] = z[row_num].iloc[activity_column_no]                        
+                        else:
+                            udEntry['activity'] = self.EmptyFill
+                        udEntry['excelRow']     = {'highlight_regions':[{"cellRange": f'{c2e(row_num-2,station_column_no)}:{c2e(row_num-2,final_column_no)}'    , 'content': 'wait'    },
+                                                                        {"cellRange": f'{c2e(row_num  ,station_column_no)}:{c2e(row_num  ,final_column_no)}'    , 'content': 'arr'     },
+                                                                        {"cellRange": f'{c2e(row_num ,activity_column_no)}:{c2e(row_num-2 ,activity_column_no)}', 'content': 'activity'}],
+                                                   'annotation_cell'  : c2e(row_num, final_column_no+2)
+                                                   }
+                        
+                        udEntries.append(udEntry)
+        
+        #second pass: standardise times and map UD Activity to RailSys Activity
+        activity_map = {'REVRSE':'turnaround'}
         
         for idx, entry in enumerate(udEntries):
-            #convert all times into hh:mm:ss format understood by RailSys
-            udEntries[idx]['arrTime'] = timeStandardiser(udEntries[idx]['arrTime'])
-            udEntries[idx]['depTime'] = timeStandardiser(udEntries[idx]['depTime'])
-            
-            if udEntries[idx]['activity'] == 'REVRSE':
-                udEntries[idx]['activity'] = 'turnaround'
-            else:
-                udEntries[idx]['activity'] = None
-        
-        return udEntries
+             udEntries[idx]['arrTime'] = timeStandardiser(udEntries[idx]['arrTime'])
+             udEntries[idx]['depTime'] = timeStandardiser(udEntries[idx]['depTime'])
+             udEntries[idx]['activity'] = activity_map.get(udEntries[idx]['activity'], 'turnaround')
+         
+        return udEntries      
+
 
 '''
-ScotRail Reader 1: user needs to drag and drop Word UD into Excel
-'''
+ScotRail Reader: user needs to open XML or .xlsx UD in Excel, trim off all rows up to "Diagram:" row 
+and trim all columns up to station name
+'''    
 class ScotRail(Reader):
     def __init__(self, pathToUD):
         super().__init__(pathToUD)
-        self.standardised = False
+        self.hasExcelRows = True
+        
     def Parse(self, pathToUD):
-        return read_excel(pathToUD, usecols=[0,1,2,4], header=0, dtype = str).fillna(self.EmptyFill)
-
-
-# '''s
-# ScotRail Reader 2: user needs to drag and drop Word UD into Excel and trim all rows/cols
-# so that Location-Arr-Dep header is in the top left corner
-# '''
-# class ScotRailDec19(Reader):
-#     def __init__(self, pathToUD):
-#         super().__init__(pathToUD)
-#         self.standardised = False
-#     def Parse(self, pathToUD):
-#         return read_excel(pathToUD, usecols=[0,1,2,4], header=8, dtype = str).fillna(self.EmptyFill)
-
-
-
-# class FTPE(Reader):
-#     pass
-#     #def Parse(self, pathToUD):
+        udEntries = []
+        z  = read_excel(pathToUD, dtype = str, header = None).fillna(self.EmptyFill)
         
+        #create a list of rows
+        z  = [j for i,j in z.iterrows()] 
         
-        #return None
+        #specify the format <num><letter><num><num> that we will check headcodes against e.g. 1K11
+        headcode_check = compile('[0-9][A-Za-z][0-9][0-9]') 
+        
+        station_column_no = 0
+        arr_time_column_no = 1
+        dep_time_column_no = 2
+        activity_column_no = 3
+        headcode_column_no = 4
+        final_column_no = 8
+        
+        #first pass: transform sheet to udEntries
+        for row_num, row in enumerate(z):
+            #if the current row has a non-empty station name, and its headcode cell matches the format [0-9][A-Za-z][0-9][0-9]
+            if z[row_num].iloc[station_column_no]!= self.EmptyFill\
+            and headcode_check.match(z[row_num].iloc[headcode_column_no]):
+                
+                #...check 1 row above: if this test passes, there is no gap
+                if headcode_check.match(z[row_num-1].iloc[headcode_column_no]):
+                    if not z[row_num].iloc[headcode_column_no] == z[row_num-1].iloc[headcode_column_no]:
+                        
+                        udEntry = self.udEntryFormat.copy()
+                        
+                        udEntry['location']     = z[row_num].iloc[station_column_no]
+                        udEntry['arrTime']      = z[row_num].iloc[arr_time_column_no]
+                        udEntry['arrHeadcode']  = headcode_check.match(z[row_num-1].iloc[headcode_column_no]).group()
+                        udEntry['depTime']      = z[row_num].iloc[dep_time_column_no]
+                        udEntry['depHeadcode']  = headcode_check.match(z[row_num].iloc[headcode_column_no]).group()
+                        udEntry['activity']     = self.EmptyFill if z[row_num].iloc[activity_column_no] == self.EmptyFill else z[row_num].iloc[activity_column_no]
+                        udEntry['excelRow']     = {'highlight_regions':[{"cellRange": f'{c2e(row_num-1,station_column_no)}:{c2e(row_num-1,final_column_no)}', 'content': 'wait'    },
+                                                                        {"cellRange": f'{c2e(row_num  ,station_column_no)}:{c2e(row_num  ,final_column_no)}', 'content': 'arr'     },
+                                                                        {"cellRange": f'{c2e(row_num ,activity_column_no)}'                                 , 'content': 'activity'}],
+                                                   'annotation_cell'  : c2e(row_num, final_column_no+2)
+                                                  }
+                        
+                        udEntries.append(udEntry)
+                    
+                #...or check 2 rows above, if this passes, the rows have a gap in between
+                elif headcode_check.match(z[row_num-2].iloc[headcode_column_no]):
+                    if not z[row_num].iloc[headcode_column_no] == z[row_num-2].iloc[headcode_column_no]:
+                        
+                        udEntry = self.udEntryFormat.copy()
+                        
+                        udEntry['location']     = z[row_num].iloc[station_column_no]
+                        udEntry['arrTime']      = z[row_num-1].iloc[arr_time_column_no]
+                        udEntry['arrHeadcode']  = headcode_check.match(z[row_num-2].iloc[headcode_column_no]).group()
+                        udEntry['depTime']      = z[row_num].iloc[dep_time_column_no]
+                        udEntry['depHeadcode']  = headcode_check.match(z[row_num].iloc[headcode_column_no]).group()
+                        udEntry['activity']     = self.EmptyFill if z[row_num-1].iloc[activity_column_no] == self.EmptyFill else z[row_num-1].iloc[activity_column_no]
+                        udEntry['excelRow']     = {'highlight_regions':[{"cellRange": f'{c2e(row_num-2,station_column_no)}:{c2e(row_num-2,final_column_no)}', 'content': 'wait'    },
+                                                                        {"cellRange": f'{c2e(row_num  ,station_column_no)}:{c2e(row_num  ,final_column_no)}', 'content': 'arr'     },
+                                                                        {"cellRange": f'{c2e(row_num-1 ,activity_column_no)}'                               , 'content': 'activity'}],
+                                                   'annotation_cell'  : c2e(row_num, final_column_no+2)
+                                                   }
+                        
+                        udEntries.append(udEntry)
+        
+        #second pass: standardise times and map UD Activity to RailSys Activity
+        activity_map = {'Revrse':'turnaround',
+                        'Attach':'join',
+                        'Detach':'split'}
+        
+        for idx, entry in enumerate(udEntries):
+             udEntries[idx]['arrTime'] = timeStandardiser(udEntries[idx]['arrTime'])
+             udEntries[idx]['depTime'] = timeStandardiser(udEntries[idx]['depTime'])
+             
+             udEntries[idx]['activity'] = activity_map.get(udEntries[idx]['activity'], 'turnaround')
+         
+        return udEntries        
+
+'''
+FTPE: read XML, and for each diagramExchange > unitDiagramList > unitDiagram > details element, iterate over all the
+diagMovement and diagStatic elements (movements). When there is a headcode change between diagMocvements, check for a diagStatic between
+them. If present, extract the activity from that diagStatic. If absent, default to EmptyFill (which will later map to Turnaround).
+'''
+class FTPE(Reader):
+    def Parse(self, pathToUD):
+        udEntries = []
+        
+        #Remove the XML namespace that FTPE diagrams have since that makes using XPath later impossible.
+        parser = et.XMLParser(remove_blank_text=True)
+        z= et.parse(pathToUD, parser)
+        z=z.getroot()
+        for elem in z.getiterator():
+            if not hasattr(elem.tag, 'find'): continue  # (1)
+            i = elem.tag.find('}')
+            if i >= 0:
+                elem.tag = elem.tag[i+1:]
+        objectify.deannotate(z, cleanup_namespaces=True)
+        
+        #Because we only expect a single unitDiagramList, we write the left-hand side as (some_variable ,) to extract one and only one 
+        #element from the search results returned by z.xpath(...). If there are less than or more than 1 element, a ValueError is raised.
+        (unit_diagram_list, ) = z.xpath('./unitDiagramList') 
+        
+        #one unit_diagram_list = one train run
+        for unit_diagram_element in unit_diagram_list:
+            (details, ) = unit_diagram_element.xpath('details')
+            
+            #movement = either a diagStatic or diagMovement
+            for idx, movement in enumerate(details):
+                if movement.tag == 'diagMovement'\
+                and movement.xpath(f'.//following-sibling::diagMovement[1]/journey[@origin="{n(movement.xpath("./journey/@dest"))}"]/activity[@trainid!="{n(movement.xpath("./journey/activity/@trainid"))}"]'):   
+                    try:                               
+                        udEntry = self.udEntryFormat.copy()
+                        udEntry['location']     = n(movement.xpath("./journey/@dest"))
+                        udEntry['arrTime']      = n(movement.xpath("./journey/@arr"))[0:8]
+                        udEntry['arrHeadcode']  = n(movement.xpath("./journey/activity/@trainid"))[0:4]
+                        udEntry['depTime']      = n(movement.xpath(".//following-sibling::diagMovement[1]/journey/@dep"))[0:8]
+                        udEntry['depHeadcode']  = n(movement.xpath(".//following-sibling::diagMovement[1]/journey/activity/@trainid"))[0:4]
+                        if movement.xpath(f'.//following-sibling::diagStatic[@loc="{n(movement.xpath("./journey/@dest"))}"][last()]'):
+                            udEntry['activity'] = n(movement.xpath(f'.//following-sibling::diagStatic[@loc="{n(movement.xpath("./journey/@dest"))}"][last()]/activity/@id'))
+                        else:
+                            udEntry['activity'] = 'UDNONE'
+                        udEntries.append(udEntry)
+                    except:
+                        pass
+
+        activity_map = {'REVRSE':'turnaround',
+                        'ATTACH':'join',
+                        'DETACH':'split'}
+        
+        for idx, entry in enumerate(udEntries):
+             udEntries[idx]['arrTime'] = timeStandardiser(udEntries[idx]['arrTime'])
+             udEntries[idx]['depTime'] = timeStandardiser(udEntries[idx]['depTime'])
+             udEntries[idx]['activity'] = activity_map.get(udEntries[idx]['activity'], 'turnaround')
+             
+        return udEntries
 
 if __name__ == '__main__':
     pass
@@ -133,6 +299,6 @@ if __name__ == '__main__':
     
     #print(Avanti('uAvanti.xlsx').ud)
     
-    z = Avanti('uAvanti.xlsx')
-    y  = Avanti('uXCdec19.xlsx')
+    #z = Avanti('uAvanti.xlsx')
+    #y  = Avanti('uXCdec19.xlsx')
 
