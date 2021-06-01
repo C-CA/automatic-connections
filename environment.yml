@@ -1,12 +1,13 @@
-name: connectionmacro
+﻿name:connectionmacro
 channels:
   - defaults
   - conda-forge
 dependencies:
-  - python=3.8
-  - pyqt
-  - lxml
-  - pandas
   - pyinstaller
-  - xlrd
+  - pyqt
+  - python=3.8
   - openpyxl
+  - pandas
+  - xlrd
+  - lxml
+  - xlwings
