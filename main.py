@@ -233,7 +233,7 @@ class Window(QMainWindow, Ui_MainWindow):
             write(tree = self.tree, filename = self.pathToSave)
 
             self.console.append(f'\nAdded {self.result.made.count} connections into \n{self.pathToSave} and saved. (hash {hashfile(self.pathToSave)})')
-            #oregon-delta-wyoming-romeo-delaware-eleven
+            #longlands.rsx + scotrail u170.xlsx hash + all Edinburgh/EDINBUR connections = oregon-delta-wyoming-romeo-delaware-eleven
 
             
 def excepthook(typ, value, tb):

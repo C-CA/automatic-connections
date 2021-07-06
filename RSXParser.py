@@ -40,7 +40,7 @@ gu = getIfExistsAndUnique
 
 
 def findUniqueEntry(tree,trainName,stationID,time,index,secondsTolerance = 600): #conArr entries are always the last stop (index = -1), and conWait the first (index = 0)
-    timeSearchList = tree.findall(f'.//train[@name="{trainName}"]//entry[@stationID="{stationID}"]')
+    timeSearchList = tree.xpath(f'.//train[starts-with(@name, "{trainName}")]//entry[@stationID="{stationID}"]')
     
     entries = []
     if timeSearchList !=[]:
@@ -66,7 +66,7 @@ def findUniqueEntry(tree,trainName,stationID,time,index,secondsTolerance = 600):
     try:
         return getIfExistsAndUnique(entries2)
     except ValueError as errormsg:
-        raise ValueError(f'{"train at end of run" if index == -1 else "train at start of run"} {trainName} @ {stationID} @ {time} was {errormsg}')
+        raise ValueError(f'train {trainName} {"terminating" if index == -1 else "originating"} at {stationID} at {time} was {errormsg}')
         
 
 def connectionExists(entryWait, conn):

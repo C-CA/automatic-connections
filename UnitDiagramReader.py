@@ -14,7 +14,7 @@ the (new) standardized UD entry format - transform everything into this
  arrHeadcode    : e.g. 1K12
  depTime        : e.g. '06:51:00'
  depHeadcode    : e.g. 1K51
- activity       : e.g. 'split'  (can be'split', 'join' or 'turnaround')
+ activity       : e.g. 'split'  (can be 'split', 'join' or 'turnaround')
  excelRow       : [{"cellRange": "A1:B1", "content": 'arr'},
                    {"cellRange": "A2:B2", "content": 'wait'}
                    {"cellRange": "D1",    "content": 'activity'}]
@@ -32,21 +32,19 @@ Base Reader class. All UDs should inherit from this class and define their own P
 a list of entries that are formatted according to the udEntryFormat.
 '''
 class Reader:
+    EmptyFill = 'UDNONE' #define what to fill empty cells with
+    standardised = True  #default value
+    hasExcelRows = False #default value
+    
+    udEntryFormat = {'location'     :   None,
+                     'arrTime'      :   None,
+                     'arrHeadcode'  :   None,
+                     'depTime'      :   None,
+                     'depHeadcode'  :   None,
+                     'activity'     :   None,
+                     'excelRow'     :   None}
+        
     def __init__(self, pathToUD):
-        self.EmptyFill = 'UDNONE' #define what to fill empty cells with
-        self. udEntryFormat = {
-         'location'     :   None,
-         'arrTime'      :   None,
-         'arrHeadcode'  :   None,
-         'depTime'      :   None,
-         'depHeadcode'  :   None,
-         'activity'     :   None,
-         'excelRow'     :   None
-         }
-        
-        self.standardised = True #default value
-        self.hasExcelRows = False
-        
         self.pathToUD = pathToUD
         self.ud = self.Parse(self.pathToUD)
     
@@ -58,9 +56,10 @@ Avanti Reader: user needs to drag and drop Word UD into Excel, trim off all rows
 and trim all columns up to station name
 '''    
 class Avanti(Reader):
-    def __init__(self, pathToUD):
-        super().__init__(pathToUD)
-        self.hasExcelRows = True
+    hasExcelRows = True
+    activity_map = {'REVRSE':'turnaround',
+                    'ATTACH':'join',
+                    'DETACH':'split'}
         
     def Parse(self, pathToUD):
         udEntries = []
@@ -96,9 +95,9 @@ class Avanti(Reader):
                         udEntry['arrHeadcode']  = headcode_check.match(z[row_num-1].iloc[headcode_column_no]).group()
                         udEntry['depTime']      = z[row_num].iloc[dep_time_column_no]
                         udEntry['depHeadcode']  = headcode_check.match(z[row_num].iloc[headcode_column_no]).group()
-                        if z[row_num-1].iloc[activity_column_no] != self.EmptyFill:
+                        if z[row_num-1].iloc[activity_column_no] in self.activity_map:
                             udEntry['activity'] = z[row_num-1].iloc[activity_column_no]
-                        elif z[row_num].iloc[activity_column_no] != self.EmptyFill:
+                        elif z[row_num].iloc[activity_column_no] in self.activity_map:
                             udEntry['activity'] = z[row_num].iloc[activity_column_no]
                         else:
                             udEntry['activity'] = self.EmptyFill
@@ -121,11 +120,11 @@ class Avanti(Reader):
                         udEntry['arrHeadcode']  = headcode_check.match(z[row_num-2].iloc[headcode_column_no]).group()
                         udEntry['depTime']      = z[row_num].iloc[dep_time_column_no]
                         udEntry['depHeadcode']  = headcode_check.match(z[row_num].iloc[headcode_column_no]).group()
-                        if z[row_num-2].iloc[activity_column_no] != self.EmptyFill:
+                        if z[row_num-2].iloc[activity_column_no] in self.activity_map:
                             udEntry['activity'] = z[row_num-2].iloc[activity_column_no]
-                        elif z[row_num-1].iloc[activity_column_no] != self.EmptyFill:
+                        elif z[row_num-1].iloc[activity_column_no] in self.activity_map:
                             udEntry['activity'] = z[row_num-1].iloc[activity_column_no]
-                        elif z[row_num].iloc[activity_column_no] != self.EmptyFill:
+                        elif z[row_num].iloc[activity_column_no] in self.activity_map:
                             udEntry['activity'] = z[row_num].iloc[activity_column_no]                        
                         else:
                             udEntry['activity'] = self.EmptyFill
@@ -138,12 +137,10 @@ class Avanti(Reader):
                         udEntries.append(udEntry)
         
         #second pass: standardise times and map UD Activity to RailSys Activity
-        activity_map = {'REVRSE':'turnaround'}
-        
         for idx, entry in enumerate(udEntries):
              udEntries[idx]['arrTime'] = timeStandardiser(udEntries[idx]['arrTime'])
              udEntries[idx]['depTime'] = timeStandardiser(udEntries[idx]['depTime'])
-             udEntries[idx]['activity'] = activity_map.get(udEntries[idx]['activity'], 'turnaround')
+             udEntries[idx]['activity'] = self.activity_map.get(udEntries[idx]['activity'], 'turnaround')
          
         return udEntries      
 
@@ -153,10 +150,11 @@ ScotRail Reader: user needs to open XML or .xlsx UD in Excel, trim off all rows 
 and trim all columns up to station name
 '''    
 class ScotRail(Reader):
-    def __init__(self, pathToUD):
-        super().__init__(pathToUD)
-        self.hasExcelRows = True
-        
+    hasExcelRows = True
+    activity_map = {'Revrse':'turnaround',
+                    'Attach':'join',
+                    'Detach':'split'}    
+    
     def Parse(self, pathToUD):
         udEntries = []
         z  = read_excel(pathToUD, dtype = str, header = None).fillna(self.EmptyFill)
@@ -221,24 +219,24 @@ class ScotRail(Reader):
                         udEntries.append(udEntry)
         
         #second pass: standardise times and map UD Activity to RailSys Activity
-        activity_map = {'Revrse':'turnaround',
-                        'Attach':'join',
-                        'Detach':'split'}
-        
         for idx, entry in enumerate(udEntries):
              udEntries[idx]['arrTime'] = timeStandardiser(udEntries[idx]['arrTime'])
              udEntries[idx]['depTime'] = timeStandardiser(udEntries[idx]['depTime'])
              
-             udEntries[idx]['activity'] = activity_map.get(udEntries[idx]['activity'], 'turnaround')
+             udEntries[idx]['activity'] = self.activity_map.get(udEntries[idx]['activity'], 'turnaround')
          
         return udEntries        
 
 '''
 FTPE: read XML, and for each diagramExchange > unitDiagramList > unitDiagram > details element, iterate over all the
-diagMovement and diagStatic elements (movements). When there is a headcode change between diagMocvements, check for a diagStatic between
+diagMovement and diagStatic elements (movements). When there is a headcode change between diagMovements, check for a diagStatic between
 them. If present, extract the activity from that diagStatic. If absent, default to EmptyFill (which will later map to Turnaround).
 '''
 class FTPE(Reader):
+    activity_map = {'REVRSE':'turnaround',
+                    'ATTACH':'join',
+                    'DETACH':'split'}
+    
     def Parse(self, pathToUD):
         udEntries = []
         
@@ -279,26 +277,19 @@ class FTPE(Reader):
                         udEntries.append(udEntry)
                     except:
                         pass
-
-        activity_map = {'REVRSE':'turnaround',
-                        'ATTACH':'join',
-                        'DETACH':'split'}
         
         for idx, entry in enumerate(udEntries):
              udEntries[idx]['arrTime'] = timeStandardiser(udEntries[idx]['arrTime'])
              udEntries[idx]['depTime'] = timeStandardiser(udEntries[idx]['depTime'])
-             udEntries[idx]['activity'] = activity_map.get(udEntries[idx]['activity'], 'turnaround')
+             udEntries[idx]['activity'] = self.activity_map.get(udEntries[idx]['activity'], 'turnaround')
              
         return udEntries
 
 if __name__ == '__main__':
     pass
-    #print(ScotRailDec19('udec19.xlsx').ud)
     
-    #print(ScotRailECML('u170.xlsx').ud)
+    # s = ScotRail('u170.xlsx')
     
-    #print(Avanti('uAvanti.xlsx').ud)
+    # a = Avanti('utfw2.xlsx')
     
-    #z = Avanti('uAvanti.xlsx')
-    #y  = Avanti('uXCdec19.xlsx')
-
+    # f = FTPE('uFTPE.xml')
