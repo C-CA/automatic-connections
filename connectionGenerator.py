@@ -20,12 +20,12 @@ import xlwings as xw
 from lxml import etree as et
 
 
-def GenerateConnections(tree, DiagramObject, stationID, stationName, findall_mapping = False):
+def GenerateConnections(tree, DiagramObject, stationID, stationName, findall_mapping = False, secondsTolerance = 600):
     result = ResultType()
     made_so_far = set()
     
     if findall_mapping:
-        location_mapping_file = et.parse('location-mapping.xml', parser = et.XMLParser(remove_blank_text=True)).getroot()
+        location_mapping_file = et.parse(findall_mapping, parser = et.XMLParser(remove_blank_text=True)).getroot()
         location_mapping = {loc.attrib['longDesc']:loc.attrib['tiploc'] for loc in location_mapping_file}
 
     assert DiagramObject.standardised, f'Internal error: Unit diagram reader {DiagramObject.__class__} has not been standardised yet.'
@@ -56,13 +56,15 @@ def GenerateConnections(tree, DiagramObject, stationID, stationName, findall_map
                                               udEntry['arrHeadcode'],
                                               stationID,
                                               udEntry['arrTime'],
-                                              -1)  # binding reference to tree
+                                              -1,
+                                              secondsTolerance)  # binding reference to tree
 
                 entryWait = rp.findUniqueEntry(tree,
                                                udEntry['depHeadcode'],
                                                stationID,
                                                udEntry['depTime'],
-                                               0)
+                                               0,
+                                               secondsTolerance)
 
                 conn = rp.makecon(entryArr, operation=udEntry['activity'])
 

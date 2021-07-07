@@ -66,7 +66,7 @@ def findUniqueEntry(tree,trainName,stationID,time,index,secondsTolerance = 600):
     try:
         return getIfExistsAndUnique(entries2)
     except ValueError as errormsg:
-        raise ValueError(f'train {trainName} {"terminating" if index == -1 else "originating"} at {stationID} at {time} was {errormsg}')
+        raise ValueError(f'train {trainName} {"terminating" if index == -1 else "originating"} at {stationID} at {time} +/- {secondsTolerance/60:.1f} min was {errormsg}')
         
 
 def connectionExists(entryWait, conn):
