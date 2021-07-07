@@ -74,8 +74,9 @@ class Avanti(Reader):
         station_column_no = 0
         arr_time_column_no = 1
         dep_time_column_no = 2
-        activity_column_no = 4
         headcode_column_no = 3
+        activity_column_no = 4
+        
         final_column_no = 6
         
         #first pass: transform sheet to udEntries
