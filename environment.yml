@@ -1,4 +1,4 @@
-﻿name:connectionmacro
+name:connectionmacro
 channels:
   - defaults
   - conda-forge
