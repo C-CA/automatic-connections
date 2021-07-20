@@ -19,7 +19,7 @@ python main.py
 pyinstaller --clean --onefile --noconsole main.py -n ConnectionMacro.exe
 Remember to update the VERSION code.
 
-If, after compiling, the .exe does not run for whatever reason (e.g. failed to execute script main), compile it in console mode:s
+If, after compiling, the .exe does not run for whatever reason (e.g. failed to execute script main), compile it in console mode:
 pyinstaller --clean --onefile --noconsole main.py -n ConnectionMacro.exe
 
 And run ConnectionMacro.exe from a terminal to read the error description.
