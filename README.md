@@ -1,4 +1,4 @@
-# The Connection Macro
+# Unit Diagram Reader (connection macro)
 
 ### Welcome! If you're on this page, you probably want to help out with, upgrade, or just get familiar with the source code of the Connection Macro.
 
