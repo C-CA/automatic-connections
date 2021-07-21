@@ -9,7 +9,7 @@
      
 2. Once you've installed Anaconda, open Anaconda Prompt from your start menu. Use the 'cd' command to navigate to the folder where you extracted the Connection Macro ZIP file to. Here, there should be a file called ```environment.yml.```
 3. Type the following command into your Anaconda Prompt and hit enter: ```conda env create -f environment.yml```
-4. Once it's done, do ```conda activate connectionmacro```
+4. Once it's done, do ```conda activate unitdiagramreader```
 5. Finally, do ```python main.py```. If you followed all the steps above correctly, the Connection Macro should open!
 
 Feel free to open any of the .py files to see what they do. After you make any changes, always run ```python main.py``` to test your code.
