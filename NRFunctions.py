@@ -87,6 +87,8 @@ def removeNone(cells):
             output.append(i)
     return output
 
+#FIXME: Note that this function does not support 24:xx:xx times, which is how RailSys chooses to represent 
+#past-midnight times in the RSX. On encountering a 24:xx:xx a ValueError will simply be thrown.
 def timeStandardiser(input):
     input = str(input)
     for time_format in ['%H:%M:%S','%H.%M','%H+%M','%H:%M','%H:%M½','%j&%H:%M','%H']:
