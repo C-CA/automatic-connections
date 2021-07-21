@@ -1,4 +1,4 @@
-name : connectionmacro
+name : unitdiagramreader
 channels:
   - defaults
   - conda-forge
